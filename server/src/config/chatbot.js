@@ -39,7 +39,6 @@ Guidelines:
 
 Respond naturally in the language the user is speaking (English or Hindi), or provide bilingual responses when appropriate.`;
 
-// POST /api/chat endpoint
 app.post("/", async (req, res) => {
   try {
     const { message, language, history } = req.body;
