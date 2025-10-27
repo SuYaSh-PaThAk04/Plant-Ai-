@@ -52,7 +52,7 @@ Respond only in English. Do not use Hindi.`,
       },
       {
         headers: {
-          "xi-api-key": ELEVEN_API_KEY,
+          "xi-api-key": ELEVENLABS_API_KEY,
           "Content-Type": "application/json",
         },
         responseType: "arraybuffer",
