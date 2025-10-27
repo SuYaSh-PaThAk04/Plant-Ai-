@@ -5,7 +5,7 @@ import axios from "axios";
 dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY;
+const ELEVEN_API_KEY = process.env.ELEVENLABS_API_KEY;
 
 const ENGLISH_VOICE_ID = "pqHfZKP75CvOlQylNhV4";
 const HINDI_VOICE_ID = "AtX6p0vItOfWBULsG7XF";
