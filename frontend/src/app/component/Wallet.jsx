@@ -124,7 +124,7 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
     setIsRefreshing(true);
 
     try {
-      // ✅ Use the actual account, not ADRESS (typo fix)
+
       const res = await fetch(`${API_BASE}/balance/${account}`);
 
       if (!res.ok) throw new Error("Failed to fetch balances");

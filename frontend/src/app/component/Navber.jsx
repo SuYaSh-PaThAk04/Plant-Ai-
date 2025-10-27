@@ -21,7 +21,7 @@ export default function Navbar() {
     { name: "Home", href: "/", icon: Home },
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Farm View", href: "/FarmView", icon: Eye },
-    { name: "Features", href: "#features", icon: Zap },
+    { name: "Disease Detection", href: "/Disease-Detect", icon: Zap },
     { name: "Wallet", href: "/Wallet", icon: WalletIcon },
   ];
 
@@ -111,11 +111,10 @@ export default function Navbar() {
         </div>
       </motion.nav>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
+         
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

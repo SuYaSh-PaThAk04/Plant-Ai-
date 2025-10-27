@@ -12,7 +12,7 @@ export const analyzePlant = async (imageBase64) => {
       {
         inlineData: {
           data: imageBase64,
-          mimeType: "image/png", // or "image/jpeg"
+          mimeType: "image/png", 
         },
       },
     ]);

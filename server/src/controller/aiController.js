@@ -2,9 +2,12 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
+
 dotenv.config();
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY, {
+  apiEndpoint: "https://generativelanguage.googleapis.com/v1",
+});
 
 export const analyzeImage = async (req, res) => {
   try {
@@ -13,78 +16,76 @@ export const analyzeImage = async (req, res) => {
       return res.status(400).json({ error: "No image uploaded" });
     }
 
+    // Read and encode the image
     const imagePath = path.resolve(file.path);
     const imageBuffer = fs.readFileSync(imagePath);
     const imageBase64 = imageBuffer.toString("base64");
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // ✅ Use the correct Gemini model
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash-preview-05-20",
+    });
 
+    // 🌱 Structured AI instruction
     const prompt = `
-    Analyze the provided crop image and return three parts:
-    1. Disease detected
-    2. Recommended cure
-    3. Type and properties of crop
+    You are an agricultural expert.
+    Analyze the provided crop image and return a **JSON response** with:
+    {
+      "disease": "name of the disease or 'Healthy'",
+      "description": "short detailed explanation of symptoms and cause",
+      "cure": "recommended treatment and preventive actions",
+      "cropInfo": {
+        "type": "type of crop (e.g., fruit, cereal, legume)",
+        "properties": ["list of 3-5 key properties about this crop"]
+      }
+    }
+    Respond **only** in JSON format without any extra text.
     `;
 
+    // 🧠 Generate AI response
     const result = await model.generateContent([
       { inlineData: { mimeType: file.mimetype, data: imageBase64 } },
       { text: prompt },
     ]);
 
     const responseText = result.response.text();
-    res.status(200).json({ success: true, data: responseText });
-  } catch (error) {
-    console.error("Gemini Error:", error);
 
-    // ✅ DEMO fallback data when Gemini fails
-    const demoResponse = {
+    // 🧾 Parse JSON safely
+    // Extract the raw text Gemini returned
+    const rawText = result.response.text();
+
+    // 🧠 Clean and parse the JSON safely
+    let parsed;
+    try {
+      // Remove ```json or ``` if Gemini wrapped it in code block
+      const cleanText = rawText
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
+
+      parsed = JSON.parse(cleanText);
+    } catch (err) {
+      console.warn("⚠️ Could not parse JSON, returning raw text instead.");
+      parsed = { rawText }; // fallback
+    }
+
+    res.status(200).json({
       success: true,
-      demo: true,
-      data: {
-        crop: "Apple (Malus domestica)",
-        disease: "Bacterial Leaf Scorch (caused by Xylella fastidiosa)",
-        symptoms: [
-          "Brown, dry, and scorched-looking leaf edges",
-          "Irregular brown necrosis starting from leaf margins",
-          "Premature leaf drop and reduced fruit yield",
-        ],
-        cure: {
-          cultural: [
-            "Prune affected branches",
-            "Remove fallen leaves and debris",
-            "Avoid overhead irrigation",
-          ],
-          vector_control: [
-            "Use neem-based insecticides",
-            "Apply Imidacloprid carefully (systemic insecticide)",
-            "Place yellow sticky traps to monitor leafhoppers",
-          ],
-          nutrition: [
-            "Maintain balanced irrigation",
-            "Use potassium and calcium-rich fertilizers",
-          ],
-        },
-        crop_info: {
-          type: "Fruit-bearing deciduous tree",
-          properties: [
-            "Prefers well-drained loamy soil",
-            "Requires full sunlight",
-            "Sensitive to drought and poor water management",
-          ],
-        },
-        summary: {
-          pathogen: "Xylella fastidiosa (bacterium)",
-          spread: "Through xylem-feeding insects like leafhoppers",
-          prevention: [
-            "Inspect nursery plants before planting",
-            "Maintain orchard hygiene",
-            "Use resistant cultivars where possible",
-          ],
-        },
-      },
-    };
+      analysis: parsed,
+    });
+  } catch (error) {
+    console.error("Error in analyzeImage:", error);
 
-    // Send fallback demo data
-    res.status(200).json(demoResponse);
+    let errorMessage = "Failed to analyze image.";
+    if (error.message.includes("API key not valid"))
+      errorMessage = "Invalid Gemini API key. Please update your .env key.";
+    else if (error.message.includes("404"))
+      errorMessage = "Model not found. Try 'gemini-1.5-flash'.";
+
+    return res.status(500).json({
+      success: false,
+      message: errorMessage,
+      details: error.message,
+    });
   }
 };

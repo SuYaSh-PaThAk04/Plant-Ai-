@@ -6,7 +6,7 @@ import {
 
 const router = express.Router();
 
-router.post("/analyze", analyzePlantController);
+
 router.get("/history/:userId", getAnalysisHistory);
 
 export default router;
