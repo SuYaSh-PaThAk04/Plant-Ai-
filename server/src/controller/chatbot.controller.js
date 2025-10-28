@@ -35,12 +35,6 @@ export const chatWithGemini = async (req, res) => {
       });
     }
 
-    if (!language || !["hi-IN", "en-US"].includes(language)) {
-      return res.status(400).json({
-        success: false,
-        error: "Language must be either 'hi-IN' or 'en-US'",
-      });
-    }
 
     // Validate environment variables
     if (!process.env.GOOGLE_API_KEY) {
