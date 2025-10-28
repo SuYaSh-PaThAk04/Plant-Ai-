@@ -2690,7 +2690,7 @@ Pesticides: ${farmAnalytics.resourceUsage.pesticides.used}/${
                   recommendations
                 </p>
                 <p className="text-gray-500 text-sm mt-2">
-                  We'll use your location to provide accurate local weather data
+                  {` We'll use your location to provide accurate local weather data`}
                 </p>
               </div>
             )}
@@ -2987,8 +2987,8 @@ Pesticides: ${farmAnalytics.resourceUsage.pesticides.used}/${
                   Get personalized crop recommendations based on your location
                 </p>
                 <p className="text-gray-500 text-sm mt-2">
-                  We'll analyze soil properties and climate data to suggest the
-                  best crops for your farm
+                 {` We'll analyze soil properties and climate data to suggest the
+                  best crops for your farm`}
                 </p>
               </div>
             )}
