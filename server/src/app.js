@@ -9,7 +9,8 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:3000",              // Local dev
-  "https://plant-ai-557c.vercel.app/",   // Deployed (example)
+  "https://plant-ai-557c.vercel.app/", 
+  "https://plant-ai-1sxv.onrender.com/api/ai/analyze",// Deployed (example)
   "https://vercel.com/suyash-pathak04s-projects/plant-ai-557c/Acy8bRQBPhC2QUJGsNGgiktqG7uC"   // If you have multiple deployments
 ];
 
