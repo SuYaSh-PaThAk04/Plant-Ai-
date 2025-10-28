@@ -10,7 +10,7 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 // ElevenLabs Configuration
 const ELEVEN_API_KEY = process.env.ELEVENLABS_API_KEY;
 const ENGLISH_VOICE_ID = "pqHfZKP75CvOlQylNhV4";
-const HINDI_VOICE_ID = "AtX6p0vItOfWBULsG7XF";
+const HINDI_VOICE_ID = "1qEiC6qsybMkmnNdVMbK";
 
 // System instructions for different languages
 const SYSTEM_INSTRUCTIONS = {
