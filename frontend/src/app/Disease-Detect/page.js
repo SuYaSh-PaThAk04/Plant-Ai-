@@ -11,6 +11,7 @@ import {
   Pill,
   FileText,
 } from "lucide-react";
+import Image from "next/image";
 
 export default function DiseaseDetectPage() {
   const [imagePreview, setImagePreview] = useState(null);
@@ -235,7 +236,7 @@ export default function DiseaseDetectPage() {
                   <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-300" />
                     <div className="relative overflow-hidden rounded-2xl">
-                      <img
+                      <Image
                         src={imagePreview}
                         alt="Preview"
                         className="w-full h-96 object-cover"
