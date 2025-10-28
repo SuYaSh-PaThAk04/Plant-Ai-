@@ -43,7 +43,7 @@ export default function DiseaseDetectPage() {
     formData.append("image", selectedFile);
 
     try {
-      const res = await fetch("http://localhost:5000/api/ai/analyze", {
+      const res = await fetch("https://plant-ai-1sxv.onrender.com/api/ai/analyze", {
         method: "POST",
         body: formData,
       });
