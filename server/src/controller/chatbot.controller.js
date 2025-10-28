@@ -50,7 +50,7 @@ export const chatWithGemini = async (req, res) => {
 
     // Configure Gemini AI model with CORRECT systemInstruction format
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       systemInstruction: SYSTEM_INSTRUCTIONS[language], // ✅ Fixed: Direct string, not nested object
     });
 
