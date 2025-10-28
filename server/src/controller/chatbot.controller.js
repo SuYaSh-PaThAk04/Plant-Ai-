@@ -35,7 +35,6 @@ export const chatWithGemini = async (req, res) => {
       });
     }
 
-
     // Validate environment variables
     if (!process.env.GOOGLE_API_KEY) {
       console.error("GOOGLE_API_KEY is not set in environment variables");
@@ -49,28 +48,16 @@ export const chatWithGemini = async (req, res) => {
       console.warn("ELEVENLABS_API_KEY is not set. Audio generation will be skipped.");
     }
 
-    // Configure Gemini AI model
+    // Configure Gemini AI model with CORRECT systemInstruction format
     const model = genAI.getGenerativeModel({
-      model: "gemini-flash-latest",
-      systemInstruction: {
-        role: "system",
-        parts: [
-          {
-            text: SYSTEM_INSTRUCTIONS[language],
-          },
-        ],
-      },
-    });
-
-    // Start chat with history
-    const chat = model.startChat({
-      history: [{ role: "user", parts: [{ text: message }] }],
+      model: "gemini-1.5-flash",
+      systemInstruction: SYSTEM_INSTRUCTIONS[language], // ✅ Fixed: Direct string, not nested object
     });
 
     // 🌾 Get AI response from Gemini
     let reply;
     try {
-      const result = await chat.sendMessage(message);
+      const result = await model.generateContent(message);
       reply = result.response.text();
 
       if (!reply || reply.trim() === "") {
