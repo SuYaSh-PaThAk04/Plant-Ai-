@@ -328,18 +328,6 @@ export default function FarmMonitor() {
 
       {/* Sidebar */}
       <div className="w-96 bg-gradient-to-b from-gray-900/95 to-black/95 backdrop-blur-xl border-r border-emerald-500/20 p-6 flex flex-col gap-6 z-10 overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-lg shadow-emerald-500/30 text-2xl">
-            🌾
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">
-              AgriTech Pro
-            </h1>
-            <p className="text-xs text-gray-400">Single Plot Monitor</p>
-          </div>
-        </div>
 
         {/* Sensor Panel */}
         <div
