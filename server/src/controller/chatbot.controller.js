@@ -35,7 +35,6 @@ export const chatWithGemini = async (req, res) => {
       });
     }
 
-    // Validate environment variables
     if (!process.env.GOOGLE_API_KEY) {
       console.error("GOOGLE_API_KEY is not set in environment variables");
       return res.status(500).json({
@@ -48,13 +47,11 @@ export const chatWithGemini = async (req, res) => {
       console.warn("ELEVENLABS_API_KEY is not set. Audio generation will be skipped.");
     }
 
-    // Configure Gemini AI model with CORRECT systemInstruction format
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
-      systemInstruction: SYSTEM_INSTRUCTIONS[language], // ✅ Fixed: Direct string, not nested object
+      systemInstruction: SYSTEM_INSTRUCTIONS[language],
     });
 
-    // 🌾 Get AI response from Gemini
     let reply;
     try {
       const result = await model.generateContent(message);
@@ -64,39 +61,23 @@ export const chatWithGemini = async (req, res) => {
         throw new Error("Empty response from AI model");
       }
     } catch (geminiError) {
-      console.error("Gemini AI Error:", {
-        message: geminiError.message,
-        stack: geminiError.stack,
-      });
-
+      console.error("Gemini AI Error:", geminiError);
       return res.status(500).json({
         success: false,
         error: "Failed to generate AI response. Please try again.",
-        details: process.env.NODE_ENV === "development" ? geminiError.message : undefined,
+        details:
+          process.env.NODE_ENV === "development"
+            ? geminiError.message
+            : undefined,
       });
     }
 
-    // 🎙️ Generate audio with ElevenLabs (optional, graceful degradation)
     let audioBase64 = null;
     let audioError = null;
 
-    const ttsResponse = await axios.post(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-      {
-        text: reply,
-        model_id: "eleven_multilingual_v2",
-        voice_settings: { stability: 0.4, similarity_boost: 0.8 },
-      },
-      {
-        headers: {
-          "xi-api-key": process.env.ELEVENLABS_API_KEY,
-          "Content-Type": "application/json",
-        },
-        responseType: "arraybuffer",
-      }
-    );
     if (process.env.ELEVENLABS_API_KEY) {
       try {
+      
         const voiceId = language === "hi-IN" ? HINDI_VOICE_ID : ENGLISH_VOICE_ID;
 
         const ttsResponse = await axios.post(
@@ -115,63 +96,48 @@ export const chatWithGemini = async (req, res) => {
               "Content-Type": "application/json",
             },
             responseType: "arraybuffer",
-            timeout: 30000, // 30 second timeout
+            timeout: 30000,
           }
         );
 
         const audioBuffer = Buffer.from(ttsResponse.data, "binary");
         audioBase64 = `data:audio/mpeg;base64,${audioBuffer.toString("base64")}`;
       } catch (ttsError) {
-        // Log detailed error for debugging
         console.error("ElevenLabs TTS Error:", {
           status: ttsError.response?.status,
-          statusText: ttsError.response?.statusText,
           message: ttsError.message,
           data: ttsError.response?.data
             ? Buffer.from(ttsError.response.data).toString("utf8")
             : "No data",
         });
 
-        // Set user-friendly error message based on status code
-        if (ttsError.response?.status === 401) {
-          audioError =
-            "Audio generation failed: Invalid or expired API key. Please check ElevenLabs configuration.";
-        } else if (ttsError.response?.status === 429) {
-          audioError =
-            "Audio generation failed: Rate limit exceeded. Please try again later.";
-        } else if (ttsError.response?.status === 403) {
-          audioError =
-            "Audio generation failed: Insufficient quota. Please check your ElevenLabs subscription.";
-        } else if (ttsError.code === "ECONNABORTED") {
-          audioError = "Audio generation timed out. Please try again.";
-        } else {
+        if (ttsError.response?.status === 401)
+          audioError = "Invalid or expired API key.";
+        else if (ttsError.response?.status === 429)
+          audioError = "Rate limit exceeded. Try again later.";
+        else if (ttsError.response?.status === 403)
+          audioError = "Insufficient quota. Check ElevenLabs subscription.";
+        else if (ttsError.code === "ECONNABORTED")
+          audioError = "Audio generation timed out.";
+        else
           audioError = "Audio generation failed. Text response is still available.";
-        }
 
-        // In development, include more details
         if (process.env.NODE_ENV === "development") {
           audioError += ` (${ttsError.message})`;
         }
       }
     }
 
-    // 📤 Send successful response (with or without audio)
     res.json({
       success: true,
       reply,
       lang: language,
       audio: audioBase64,
-      audioError: audioError,
+      audioError,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    // Catch any unexpected errors
-    console.error("Unexpected error in chat controller:", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-    });
-
+    console.error("Unexpected error in chat controller:", error);
     res.status(500).json({
       success: false,
       error: "An unexpected error occurred. Please try again later.",
