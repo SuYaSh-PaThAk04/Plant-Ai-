@@ -123,6 +123,7 @@ const sendMessage = async () => {
       }),
     });
 
+    // Handle HTTP failure
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(
@@ -130,37 +131,38 @@ const sendMessage = async () => {
       );
     }
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
 
-    if (!data.success || !data.reply) {
-      throw new Error("No response from AI");
-    }
+    // ✅ Always show Gemini reply if available (even if TTS failed)
+    const replyText =
+      data?.reply ||
+      (language === "hi-IN"
+        ? "क्षमा करें, मैं फिलहाल उत्तर देने में असमर्थ हूं।"
+        : "Sorry, I couldn’t process your request right now.");
 
-    const assistantMessage = { role: "assistant", content: data.reply };
+    const assistantMessage = { role: "assistant", content: replyText };
     setMessages((prev) => [...prev, assistantMessage]);
 
-    // 🧠 Play audio if backend sent one (Hindi ElevenLabs)
-    if (data.audio) {
-      const audio = new Audio(data.audio);
-      audio.play().catch((err) => console.error("Audio play failed:", err));
+    // 🎧 Try to play ElevenLabs audio if available
+    if (data?.audio) {
+      try {
+        const audio = new Audio(data.audio);
+        await audio.play();
+      } catch (err) {
+        console.warn("Audio playback failed:", err);
+        speakText(replyText); // fallback browser TTS
+      }
     } else {
-      // 🎙️ Fallback: browser TTS for English
-      speakText(data.reply);
+      // 🎙️ fallback: browser TTS if no audio
+      speakText(replyText);
     }
   } catch (error) {
     console.error("Error:", error);
 
-    let errorMessage =
+    const errorMessage =
       language === "hi-IN"
-        ? "क्षमा करें, एक त्रुटि हुई। कृपया पुनः प्रयास करें।"
-        : "Sorry, I encountered an error. Please try again.";
-
-    if (error.message.includes("Failed to fetch")) {
-      errorMessage =
-        language === "hi-IN"
-          ? "सर्वर से कनेक्ट नहीं हो सका। कृपया जांचें कि बैकएंड चल रहा है।"
-          : "Cannot connect to server. Please ensure backend is running.";
-    }
+        ? "सर्वर से कनेक्ट नहीं हो सका। कृपया जांचें कि बैकएंड चल रहा है।"
+        : "Cannot connect to the server. Please ensure the backend is running.";
 
     setMessages((prev) => [
       ...prev,
