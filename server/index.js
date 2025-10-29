@@ -4,6 +4,7 @@ import { connectDB } from "./src/config/db.js";
 
 dotenv.config();
 
+
 connectDB();
 console.log("Gemini API Key:", process.env.GEMINI_API_KEY);
 const PORT = process.env.PORT || 5000;

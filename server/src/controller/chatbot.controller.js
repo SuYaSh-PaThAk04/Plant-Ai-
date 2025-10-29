@@ -5,14 +5,14 @@ import axios from "axios";
 dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY;
+const ELEVEN_API_KEY = process.env.ELEVENLABS_API_KEY;
 
-const ENGLISH_VOICE_ID = "pqHfZKP75CvOlQylNhV4";
+const ENGLISH_VOICE_ID = "FGY2WhTYpPnrIDTdsKH5";
 const HINDI_VOICE_ID = "AtX6p0vItOfWBULsG7XF";
 
 export const chatWithGemini = async (req, res) => {
   try {
-    const { message, language } = req.body; // 👈 receive selected language from frontend
+    const { message, language } = req.body;
 
     const model = genAI.getGenerativeModel({
       model: "gemini-flash-latest",
@@ -42,7 +42,6 @@ Respond only in English. Do not use Hindi.`,
     // 🎙️ Select ElevenLabs voice based on chosen language
     const voiceId = language === "hi-IN" ? HINDI_VOICE_ID : ENGLISH_VOICE_ID;
 
-    // 🧠 Generate audio with ElevenLabs
     const ttsResponse = await axios.post(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
       {
@@ -52,7 +51,7 @@ Respond only in English. Do not use Hindi.`,
       },
       {
         headers: {
-          "xi-api-key": ELEVEN_API_KEY,
+          "xi-api-key": process.env.ELEVENLABS_API_KEY,
           "Content-Type": "application/json",
         },
         responseType: "arraybuffer",

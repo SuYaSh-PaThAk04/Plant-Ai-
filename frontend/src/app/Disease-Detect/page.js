@@ -12,6 +12,8 @@ import {
   FileText,
 } from "lucide-react";
 
+import Image from "next/image";
+
 export default function DiseaseDetectPage() {
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -42,7 +44,7 @@ export default function DiseaseDetectPage() {
     formData.append("image", selectedFile);
 
     try {
-      const res = await fetch("http://localhost:5000/api/ai/analyze", {
+      const res = await fetch("https://plant-ai-1sxv.onrender.com/api/ai/analyze", {
         method: "POST",
         body: formData,
       });
@@ -235,10 +237,13 @@ export default function DiseaseDetectPage() {
                   <div className="relative group">
                     <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-300" />
                     <div className="relative overflow-hidden rounded-2xl">
-                      <img
+                      <Image
                         src={imagePreview}
                         alt="Preview"
                         className="w-full h-96 object-cover"
+                        width={500}
+                        height={500}
+                        unoptimized
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                       <motion.button

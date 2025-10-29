@@ -21,7 +21,6 @@ export const analyzeImage = async (req, res) => {
     const imageBuffer = fs.readFileSync(imagePath);
     const imageBase64 = imageBuffer.toString("base64");
 
-    // ✅ Use the correct Gemini model
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash-preview-05-20",
     });

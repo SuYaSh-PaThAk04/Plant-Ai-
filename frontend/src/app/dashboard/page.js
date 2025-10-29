@@ -541,7 +541,7 @@ export default function Dashboard() {
   const fetchSoilInfo = async () => {
     setLoadingSoil(true);
     try {
-      const res = await fetch("http://localhost:5000/api/soil/analyze", {
+      const res = await fetch("https://plant-ai-1sxv.onrender.com//api/soil/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(sensors),
@@ -2690,7 +2690,7 @@ Pesticides: ${farmAnalytics.resourceUsage.pesticides.used}/${
                   recommendations
                 </p>
                 <p className="text-gray-500 text-sm mt-2">
-                  We'll use your location to provide accurate local weather data
+                 {` We'll use your location to provide accurate local weather data`}
                 </p>
               </div>
             )}
@@ -2987,8 +2987,8 @@ Pesticides: ${farmAnalytics.resourceUsage.pesticides.used}/${
                   Get personalized crop recommendations based on your location
                 </p>
                 <p className="text-gray-500 text-sm mt-2">
-                  We'll analyze soil properties and climate data to suggest the
-                  best crops for your farm
+             {` We'll analyze soil properties and climate data to suggest the
+                  best crops for your farm`}
                 </p>
               </div>
             )}

@@ -1,6 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { ethers } from "ethers";
+import {
+  BrowserProvider,
+  Contract,
+  formatEther,
+  formatUnits,
+  parseUnits,
+} from "ethers";
 import { QRCodeCanvas } from "qrcode.react";
 import {
   Wallet,
@@ -32,8 +38,9 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
 
   const API_BASE =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/wallet";
-  const ADRESS =
+  const ADDRESS =
     process.env.NEXT_PUBLIC_WALLET_ADDRESS || "0xYourWalletAddress";
+
   // Check if MetaMask is installed
   useEffect(() => {
     setHasMetaMask(typeof window.ethereum !== "undefined");
@@ -41,7 +48,6 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
 
   // Connect MetaMask with API integration
   async function connectWallet() {
-    // Check if MetaMask is installed
     if (typeof window.ethereum === "undefined") {
       setStatus("MetaMask not found. Please install MetaMask.");
       alert("Please install MetaMask extension to continue.");
@@ -51,7 +57,6 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
     try {
       setStatus("Connecting to MetaMask...");
 
-      // Request wallet accounts
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
@@ -61,16 +66,11 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
         return;
       }
 
-      // Create Ethers v6 provider
-      const provider = new ethers.BrowserProvider(window.ethereum);
-
-      // Get signer (await required in v6)
+      const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
+      const address = await signer.getAddress();
 
-      // Get signer address
-      const address = signer.address;
-
-      // Optional: Notify backend about wallet connection
+      // Optional: Notify backend
       try {
         await fetch(`${API_BASE}/connect`, {
           method: "POST",
@@ -78,11 +78,9 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
           body: JSON.stringify({ address }),
         });
       } catch (err) {
-        console.error("Backend connection failed:", err);
-        // Continue even if backend fails
+        console.warn("Backend connection failed:", err);
       }
 
-      // Save state in React
       setProvider(provider);
       setSigner(signer);
       setAccount(address);
@@ -91,23 +89,18 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
       // Listen for account or network changes
       window.ethereum.on("accountsChanged", (accounts) => {
         if (accounts.length === 0) {
-          // User disconnected
           setAccount(null);
           setProvider(null);
           setSigner(null);
           setStatus("Disconnected");
         } else {
-          // Account changed
           setAccount(accounts[0]);
           setStatus("Account changed. Refreshing balances...");
           fetchBalances();
         }
       });
 
-      window.ethereum.on("chainChanged", (chainId) => {
-        // Force refresh on network change
-        window.location.reload();
-      });
+      window.ethereum.on("chainChanged", () => window.location.reload());
     } catch (err) {
       console.error("Connection error:", err);
       if (err.code === 4001) {
@@ -124,19 +117,14 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
     setIsRefreshing(true);
 
     try {
-
       const res = await fetch(`${API_BASE}/balance/${account}`);
-
       if (!res.ok) throw new Error("Failed to fetch balances");
-
       const data = await res.json();
 
-      // ✅ Adjust property names based on your backend controller response
       if (data.balances) {
         setNativeBalance(data.balances.native || "0");
         setTokenBalance(data.balances.token || "0");
       } else {
-        // fallback in case response structure differs
         setNativeBalance(data.nativeBalance || "0");
         setTokenBalance(data.tokenBalance || "0");
       }
@@ -146,17 +134,15 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
       console.error("Error fetching balances:", err);
       setStatus("Failed to fetch balances ❌");
 
-      // 🔁 Fallback to direct blockchain query if API fails
+      // Fallback to direct blockchain query
       if (provider && account) {
         try {
-          // Native ETH balance
           const native = await provider.getBalance(account);
-          setNativeBalance(ethers.formatEther(native)); // ✅ ethers v6 uses formatEther (not utils.formatEther)
+          setNativeBalance(formatEther(native));
 
-          // ERC-20 Token balance
-          const token = new ethers.Contract(tokenAddress, tokenAbi, provider);
+          const token = new Contract(tokenAddress, tokenAbi, provider);
           const raw = await token.balanceOf(account);
-          setTokenBalance(ethers.formatUnits(raw, 18)); // ✅ ethers v6 uses formatUnits
+          setTokenBalance(formatUnits(raw, 18));
         } catch (fallbackErr) {
           console.error("Fallback also failed:", fallbackErr);
         }
@@ -166,22 +152,13 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
     }
   }
 
-  // Send tokens through backend API
+  // Send tokens through backend or fallback direct
   async function sendToken(to, amount) {
-    if (!signer) {
-      setStatus("Please connect your wallet first");
-      return;
-    }
-
-    if (!to || !amount) {
-      setStatus("Please fill in all fields");
-      return;
-    }
+    if (!signer) return setStatus("Please connect your wallet first");
+    if (!to || !amount) return setStatus("Please fill in all fields");
 
     try {
       setStatus("Preparing transaction...");
-
-      // Send transaction through backend
       const res = await fetch(`${API_BASE}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -195,14 +172,10 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
       });
 
       if (!res.ok) throw new Error("API request failed");
-
       const data = await res.json();
 
       if (data.success) {
-        setStatus(
-          `✅ Transaction confirmed! Hash: ${data.txHash.slice(0, 10)}...`
-        );
-        // Refresh balances after successful transaction
+        setStatus(`✅ Transaction confirmed! Hash: ${data.txHash.slice(0, 10)}...`);
         setTimeout(() => fetchBalances(), 2000);
       } else {
         setStatus(`Transaction failed: ${data.error || "Unknown error"} ❌`);
@@ -211,14 +184,11 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
       console.error("Transaction error:", err);
       setStatus("Transaction failed ❌");
 
-      // Fallback to direct transaction if API fails
+      // Direct transaction fallback
       try {
         setStatus("Retrying with direct transaction...");
-        const token = new ethers.Contract(tokenAddress, tokenAbi, signer);
-        const tx = await token.transfer(
-          to,
-          ethers.utils.parseUnits(amount, 18)
-        );
+        const token = new Contract(tokenAddress, tokenAbi, signer);
+        const tx = await token.transfer(to, parseUnits(amount, 18));
         setStatus(`Transaction sent: ${tx.hash.slice(0, 10)}...`);
         await tx.wait();
         setStatus(`✅ Transaction confirmed!`);
@@ -231,12 +201,9 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
   }
 
   useEffect(() => {
-    if (account) {
-      fetchBalances();
-    }
+    if (account) fetchBalances();
   }, [account]);
 
-  // Copy address to clipboard
   function copyAddress() {
     if (account) {
       navigator.clipboard.writeText(account);
