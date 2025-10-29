@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
+import Image from "next/image";
+
 export default function DiseaseDetectPage() {
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -240,6 +242,9 @@ export default function DiseaseDetectPage() {
                         src={imagePreview}
                         alt="Preview"
                         className="w-full h-96 object-cover"
+                        width={500}
+                        height={500}
+                        unoptimized
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                       <motion.button

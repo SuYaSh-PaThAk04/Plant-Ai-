@@ -25,6 +25,7 @@ Respond only in English. Do not use Hindi.`,
  */
 export const chatWithGemini = async (req, res) => {
   try {
+    const { message, language } = req.body;
     // Validate request body
     const { message, language } = req.body;
 
@@ -80,6 +81,21 @@ export const chatWithGemini = async (req, res) => {
     let audioBase64 = null;
     let audioError = null;
 
+    const ttsResponse = await axios.post(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        text: reply,
+        model_id: "eleven_multilingual_v2",
+        voice_settings: { stability: 0.4, similarity_boost: 0.8 },
+      },
+      {
+        headers: {
+          "xi-api-key": process.env.ELEVENLABS_API_KEY,
+          "Content-Type": "application/json",
+        },
+        responseType: "arraybuffer",
+      }
+    );
     if (process.env.ELEVENLABS_API_KEY) {
       try {
         const voiceId = language === "hi-IN" ? HINDI_VOICE_ID : ENGLISH_VOICE_ID;

@@ -269,6 +269,7 @@ export default function Home() {
               viewport={{ once: true }}
               className="text-gray-400 text-lg max-w-2xl mx-auto"
             >
+           {`   Everything you need to optimize your farm's productivity and
              {`   Everything you need to optimize your farm's productivity and
               sustainability`}
             </motion.p>
@@ -344,6 +345,7 @@ export default function Home() {
               viewport={{ once: true }}
               className="text-gray-400 text-lg"
             >
+             {` Have questions? We'd love to hear from you.`}
               {` Have questions? We'd love to hear from you.`}
             </motion.p>
           </div>

@@ -10,7 +10,8 @@ import {
   LayoutDashboard,
   Eye,
   Zap,
-  Mail,
+  BarChart,
+  Droplet,
   WalletIcon,
 } from "lucide-react";
 
@@ -20,7 +21,9 @@ export default function Navbar() {
   const navLinks = [
     { name: "Home", href: "/", icon: Home },
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Soil Analytics", href: "/Soil", icon: BarChart },
     { name: "Farm View", href: "/FarmView", icon: Eye },
+    { name: "Irrigation", href: "/Irrigation", icon: Droplet },
     { name: "Disease Detection", href: "/Disease-Detect", icon: Zap },
     { name: "Wallet", href: "/Wallet", icon: WalletIcon },
   ];
