@@ -11,8 +11,7 @@ import {
   Eye,
   Zap,
   BarChart,
-  Sprinkler,
-  Droplet ,
+  Droplet,
   WalletIcon,
 } from "lucide-react";
 
