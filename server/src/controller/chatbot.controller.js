@@ -26,8 +26,7 @@ Respond only in English. Do not use Hindi.`,
 export const chatWithGemini = async (req, res) => {
   try {
     const { message, language } = req.body;
-    // Validate request body
-    const { message, language } = req.body;
+
 
     if (!message || typeof message !== "string" || message.trim() === "") {
       return res.status(400).json({
