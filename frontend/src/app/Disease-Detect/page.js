@@ -13,8 +13,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-import Image from "next/image";
-
 export default function DiseaseDetectPage() {
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
