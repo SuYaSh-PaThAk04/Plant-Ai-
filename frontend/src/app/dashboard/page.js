@@ -2989,7 +2989,6 @@ Pesticides: ${farmAnalytics.resourceUsage.pesticides.used}/${
                 </p>
                 <p className="text-gray-500 text-sm mt-2">
              {` We'll analyze soil properties and climate data to suggest the
-                 {` We'll analyze soil properties and climate data to suggest the
                   best crops for your farm`}
                 </p>
               </div>
