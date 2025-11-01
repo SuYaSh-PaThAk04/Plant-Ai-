@@ -143,13 +143,19 @@ const sendMessage = async () => {
     const assistantMessage = { role: "assistant", content: replyText };
     setMessages((prev) => [...prev, assistantMessage]);
 
-    // 🎧 Try to play ElevenLabs audio if available
+
     if (data?.audio) {
       try {
         const audio = new Audio(data.audio);
-        await audio.play();
+        await audio
+          .play()
+          .catch((err) => console.error("Playback failed:", err));
       } catch (err) {
         console.warn("Audio playback failed:", err);
+        const synth = window.speechSynthesis;
+        const utter = new SpeechSynthesisUtterance(replyText);
+        utter.lang = language === "hi-IN" ? "hi-IN" : "en-IN";
+        synth.speak(utter);
         speakText(replyText); // fallback browser TTS
       }
     } else {

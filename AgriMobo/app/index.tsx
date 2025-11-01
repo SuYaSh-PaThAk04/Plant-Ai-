@@ -21,7 +21,6 @@ import {
   Phone,
   MapPin,
 } from "lucide-react-native";
-
 const { width, height } = Dimensions.get("window");
 
 export default function HomeScreen() {

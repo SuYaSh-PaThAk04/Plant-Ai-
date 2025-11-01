@@ -53,7 +53,7 @@ export default function AnalyticsPage() {
     setLoading(true);
     try {
       const response = await fetch(
-        "https://smartirrigationsystem-8dba4-default-rtdb.asia-southeast1.firebasedatabase.app/.json"
+        "https://smartirrigationsystem-8dba4-default-rtdb.asia-southeast1.firebasedatabase.app/sensor_readings.json"
       );
       const json = await response.json();
       setData(json);

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Dimensions,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MotiView } from "moti";
@@ -13,18 +14,65 @@ import {
   MapPin,
   Droplets,
   Thermometer,
-  Sun,
-  Wind,
   Settings,
   RefreshCw,
   AlertCircle,
   CheckCircle2,
+  Wifi,
+  WifiOff,
 } from "lucide-react-native";
+import { API_CONFIG } from "@/config/api";
 
 const { width } = Dimensions.get("window");
 
 export default function FarmViewScreen() {
   const [selectedField, setSelectedField] = useState("field-1");
+  const [sensorData, setSensorData] = useState({
+    temperature: 25,
+    humidity: 60,
+    soil_moisture: 450,
+  });
+  const [loading, setLoading] = useState(true);
+  const [connected, setConnected] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
+  const fetchSensorData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${API_CONFIG.FIREBASE.SENSOR_READINGS}/sensor_readings.json`
+      );
+      const data = await response.json();
+
+      if (data) {
+        setConnected(true);
+        const deviceKey = Object.keys(data)[0];
+        const timestamps = Object.keys(data[deviceKey]);
+        const latestTimestamp = timestamps[timestamps.length - 1];
+        const latestReading = data[deviceKey][latestTimestamp];
+
+        setSensorData({
+          temperature: latestReading.temperature || 25,
+          humidity: latestReading.humidity || 60,
+          soil_moisture: latestReading.soil_moisture || 450,
+        });
+        setLastUpdate(new Date());
+      } else {
+        setConnected(false);
+      }
+    } catch (error) {
+      console.error("Error fetching sensor data:", error);
+      setConnected(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSensorData();
+    const interval = setInterval(fetchSensorData, 600000); // Refresh every 10 minutes
+    return () => clearInterval(interval);
+  }, []);
 
   const fields = [
     {
@@ -57,34 +105,26 @@ export default function FarmViewScreen() {
     {
       id: "temp-1",
       name: "Temperature",
-      value: "24°C",
-      status: "normal",
+      value: `${sensorData.temperature.toFixed(1)}°C`,
+      status: sensorData.temperature > 30 ? "warning" : "normal",
       icon: Thermometer,
       color: "#ef4444",
     },
     {
       id: "humidity-1",
       name: "Humidity",
-      value: "65%",
+      value: `${sensorData.humidity.toFixed(1)}%`,
       status: "normal",
       icon: Droplets,
       color: "#3b82f6",
     },
     {
-      id: "light-1",
-      name: "Light Level",
-      value: "850 lux",
-      status: "normal",
-      icon: Sun,
-      color: "#f59e0b",
-    },
-    {
-      id: "wind-1",
-      name: "Wind Speed",
-      value: "12 km/h",
-      status: "normal",
-      icon: Wind,
-      color: "#8b5cf6",
+      id: "moisture-1",
+      name: "Soil Moisture",
+      value: `${sensorData.soil_moisture}`,
+      status: sensorData.soil_moisture < 400 ? "warning" : "normal",
+      icon: Droplets,
+      color: "#10b981",
     },
   ];
 
@@ -170,6 +210,81 @@ export default function FarmViewScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100, paddingTop: 100 }}
       >
+        {/* Connection Status */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: "timing", duration: 600 }}
+            style={{
+              backgroundColor: connected
+                ? "rgba(16, 185, 129, 0.1)"
+                : "rgba(239, 68, 68, 0.1)",
+              borderRadius: 16,
+              padding: 16,
+              borderWidth: 1,
+              borderColor: connected
+                ? "rgba(16, 185, 129, 0.3)"
+                : "rgba(239, 68, 68, 0.3)",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
+            >
+              {connected ? (
+                <Wifi size={20} color="#10b981" />
+              ) : (
+                <WifiOff size={20} color="#ef4444" />
+              )}
+              <Text
+                style={{
+                  color: connected ? "#10b981" : "#ef4444",
+                  fontWeight: "600",
+                }}
+              >
+                {connected ? "Sensor Online" : "Sensor Offline"}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={fetchSensorData}
+              disabled={loading}
+              style={{
+                padding: 8,
+                backgroundColor: "rgba(75, 85, 99, 0.3)",
+                borderRadius: 8,
+              }}
+            >
+              <RefreshCw
+                size={16}
+                color="#9ca3af"
+                style={{
+                  transform: [{ rotate: loading ? "180deg" : "0deg" }],
+                }}
+              />
+            </TouchableOpacity>
+          </MotiView>
+          {loading && (
+            <View style={{ alignItems: "center", marginTop: 16 }}>
+              <ActivityIndicator size="small" color="#10b981" />
+            </View>
+          )}
+          {lastUpdate && (
+            <Text
+              style={{
+                color: "#6b7280",
+                fontSize: 12,
+                marginTop: 8,
+                textAlign: "center",
+              }}
+            >
+              Last updated: {lastUpdate.toLocaleTimeString()}
+            </Text>
+          )}
+        </View>
+
         {/* Field Selection */}
         <View style={{ paddingHorizontal: 24, marginBottom: 32 }}>
           <MotiView

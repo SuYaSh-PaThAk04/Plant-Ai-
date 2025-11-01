@@ -81,7 +81,6 @@ export default function DiseaseDetectionScreen() {
 
     setIsAnalyzing(true);
     try {
-      // Simulate API call - replace with actual API endpoint
       const formData = new FormData();
       formData.append("image", {
         uri: selectedImage,
@@ -90,7 +89,10 @@ export default function DiseaseDetectionScreen() {
       } as any);
 
       const response = await fetch(
-        "https://plant-ai-1sxv.onrender.com/api/ai/analyze",
+        `${
+          process.env.EXPO_PUBLIC_BACKEND_URL ||
+          "https://plant-ai-1sxv.onrender.com"
+        }/api/ai/analyze`,
         {
           method: "POST",
           body: formData,
@@ -100,26 +102,33 @@ export default function DiseaseDetectionScreen() {
         }
       );
 
-      const result = await response.json();
+      const text = await response.text();
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        throw new Error("Invalid response from server");
+      }
 
-      if (result.success) {
-        setAnalysisResult(result);
+      if (result.success && result.analysis) {
+        const analysis = result.analysis;
+        setAnalysisResult({
+          success: true,
+          disease: analysis.disease || "Unknown Disease",
+          confidence: 0.9,
+          description: analysis.description || "No description available",
+          treatment: analysis.cure || "No treatment recommendations available",
+          severity: analysis.severity || "moderate",
+        });
       } else {
         throw new Error(result.error || "Analysis failed");
       }
     } catch (error) {
       console.error("Analysis error:", error);
-      // Mock result for demo purposes
-      setAnalysisResult({
-        success: true,
-        disease: "Early Blight",
-        confidence: 0.87,
-        description:
-          "Early blight is a common fungal disease affecting tomatoes. It appears as dark spots on leaves and can spread quickly.",
-        treatment:
-          "Remove affected leaves, improve air circulation, and apply fungicide. Water at the base of plants to avoid wetting foliage.",
-        severity: "moderate",
-      });
+      Alert.alert(
+        "Error",
+        "Failed to analyze image. Please check your connection and try again."
+      );
     } finally {
       setIsAnalyzing(false);
     }
