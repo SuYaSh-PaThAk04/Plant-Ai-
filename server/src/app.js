@@ -6,7 +6,6 @@ import chatRoutes from "./routes/chatbot.route.js";
 import walletRoutes from "./routes/wallet.Routes.js";
 const app = express();
 
-
 const allowedOrigins = [
   "http://localhost:3000",
   "https://plant-ai-557c.vercel.app",
@@ -27,6 +26,7 @@ const corsOptions = {
   },
   credentials: true,
 };
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use("/api/ai", aiRoutes);
 app.use("/api/soil", soilRoutes);
