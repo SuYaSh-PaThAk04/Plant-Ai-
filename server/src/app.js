@@ -7,7 +7,28 @@ import walletRoutes from "./routes/wallet.Routes.js";
 const app = express();
 
 
-app.use(cors());
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://plant-ai-557c.vercel.app",
+  "https://plant-ai-ten.vercel.app",
+  "https://plant-m67aa15d7-suyash-pathak04s-projects.vercel.app", 
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like Postman or server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true, // ✅ If using cookies or Authorization headers
+  })
+);
 app.use(express.json());
 app.use("/api/ai", aiRoutes);
 app.use("/api/soil", soilRoutes);

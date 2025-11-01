@@ -345,6 +345,7 @@ export default function Home() {
               className="text-gray-400 text-lg"
             >
              {` Have questions? We'd love to hear from you.`}
+              {` Have questions? We'd love to hear from you.`}
             </motion.p>
           </div>
 
