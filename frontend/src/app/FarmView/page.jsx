@@ -27,6 +27,8 @@ export default function FarmMonitor() {
   const [currentMoisture, setCurrentMoisture] = useState(450);
   const [currentHumidity, setCurrentHumidity] = useState(60);
   const [deviceId, setDeviceId] = useState("ESP8266_DEVICE_ID_1");
+  const [viewMode, setViewMode] = useState("farm");
+  const farmPlotsRef = useRef([]);
 
   const fetchSensorData = async () => {
     try {
@@ -67,13 +69,13 @@ export default function FarmMonitor() {
 
   const getPlotColor = (temp, moisture) => {
     if (moisture > 500) {
-      return 0x60a5fa; // Blue (watery)
+      return 0x60a5fa;
     } else if (temp > 30) {
-      return 0xef4444; // Red (hot)
+      return 0xef4444;
     } else if (temp > 26) {
-      return 0xf59e0b; // Orange (warm)
+      return 0xf59e0b;
     } else {
-      return 0x10b981; // Green (optimal)
+      return 0x10b981;
     }
   };
 
@@ -94,7 +96,6 @@ export default function FarmMonitor() {
   const createPlot = () => {
     if (!sceneRef.current) return;
 
-    // Remove old plot
     if (plotRef.current) {
       sceneRef.current.remove(plotRef.current);
     }
@@ -121,7 +122,6 @@ export default function FarmMonitor() {
     plotRef.current = plot;
     sceneRef.current.add(plot);
 
-    // Add water effect if moisture is high
     if (currentMoisture > 500) {
       const waterGeometry = new THREE.PlaneGeometry(1.9, 1.9);
       const waterMaterial = new THREE.MeshStandardMaterial({
@@ -142,22 +142,103 @@ export default function FarmMonitor() {
     }
   };
 
+  const createFarmGrid = () => {
+    if (!sceneRef.current) return;
+
+    farmPlotsRef.current.forEach((plot) => {
+      sceneRef.current.remove(plot);
+    });
+    farmPlotsRef.current = [];
+
+    const gridSize = 5;
+    const plotSize = 2;
+    const spacing = 0.3;
+    const totalSize = plotSize + spacing;
+    const offset = ((gridSize - 1) * totalSize) / 2;
+
+    for (let x = 0; x < gridSize; x++) {
+      for (let z = 0; z < gridSize; z++) {
+        const tempVariation = (Math.random() - 0.5) * 6;
+        const moistureVariation = (Math.random() - 0.5) * 200;
+        const plotTemp = currentTemp + tempVariation;
+        const plotMoisture = currentMoisture + moistureVariation;
+
+        const plotGeometry = new THREE.BoxGeometry(plotSize, 0.3, plotSize);
+        const color = getPlotColor(plotTemp, plotMoisture);
+
+        const plotMaterial = new THREE.MeshStandardMaterial({
+          color: color,
+          roughness: 0.6,
+          metalness: 0.4,
+          emissive: color,
+          emissiveIntensity: 0.3,
+        });
+
+        const plot = new THREE.Mesh(plotGeometry, plotMaterial);
+        plot.position.set(x * totalSize - offset, 0, z * totalSize - offset);
+        plot.castShadow = true;
+        plot.receiveShadow = true;
+        sceneRef.current.add(plot);
+        farmPlotsRef.current.push(plot);
+
+        if (plotMoisture > 500) {
+          const waterGeometry = new THREE.PlaneGeometry(
+            plotSize * 0.95,
+            plotSize * 0.95
+          );
+          const waterMaterial = new THREE.MeshStandardMaterial({
+            color: 0x60a5fa,
+            transparent: true,
+            opacity: 0.7,
+            roughness: 0.1,
+            metalness: 0.9,
+            emissive: 0x3b82f6,
+            emissiveIntensity: 0.4,
+          });
+
+          const waterPlane = new THREE.Mesh(waterGeometry, waterMaterial);
+          waterPlane.rotation.x = -Math.PI / 2;
+          waterPlane.position.set(
+            x * totalSize - offset,
+            0.16,
+            z * totalSize - offset
+          );
+          sceneRef.current.add(waterPlane);
+          farmPlotsRef.current.push(waterPlane);
+        }
+      }
+    }
+  };
+
   useEffect(() => {
     if (sceneRef.current) {
-      createPlot();
+      if (viewMode === "single") {
+        farmPlotsRef.current.forEach((plot) => {
+          sceneRef.current.remove(plot);
+        });
+        farmPlotsRef.current = [];
+        createPlot();
+      } else {
+        if (plotRef.current) {
+          sceneRef.current.remove(plotRef.current);
+        }
+        if (waterPlaneRef.current) {
+          sceneRef.current.remove(waterPlaneRef.current);
+          waterPlaneRef.current = null;
+        }
+        createFarmGrid();
+      }
     }
-  }, [currentTemp, currentMoisture, currentHumidity]);
+  }, [currentTemp, currentMoisture, currentHumidity, viewMode]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0a0a);
     scene.fog = new THREE.Fog(0x0a0a0a, 5, 30);
     sceneRef.current = scene;
 
-    // Camera
     const camera = new THREE.PerspectiveCamera(
       60,
       canvasRef.current.clientWidth / canvasRef.current.clientHeight,
@@ -168,7 +249,6 @@ export default function FarmMonitor() {
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
-    // Renderer
     const renderer = new THREE.WebGLRenderer({
       canvas: canvasRef.current,
       antialias: true,
@@ -181,7 +261,6 @@ export default function FarmMonitor() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     rendererRef.current = renderer;
 
-    // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
@@ -200,8 +279,7 @@ export default function FarmMonitor() {
     pointLight2.position.set(5, 3, 5);
     scene.add(pointLight2);
 
-    // Ground
-    const groundGeometry = new THREE.PlaneGeometry(20, 20);
+    const groundGeometry = new THREE.PlaneGeometry(50, 50);
     const groundMaterial = new THREE.MeshStandardMaterial({
       color: 0x0a0a0a,
       roughness: 0.9,
@@ -213,14 +291,12 @@ export default function FarmMonitor() {
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // Grid helper
-    const gridHelper = new THREE.GridHelper(10, 10, 0x10b981, 0x1a1a1a);
+    const gridHelper = new THREE.GridHelper(30, 30, 0x10b981, 0x1a1a1a);
     gridHelper.position.y = -0.49;
     scene.add(gridHelper);
 
     createPlot();
 
-    // Mouse controls
     let isDragging = false;
     let previousMousePosition = { x: 0, y: 0 };
 
@@ -258,7 +334,7 @@ export default function FarmMonitor() {
       e.preventDefault();
       const delta = e.deltaY * 0.001;
       const radius = Math.sqrt(camera.position.x ** 2 + camera.position.z ** 2);
-      const newRadius = Math.max(2, Math.min(8, radius + delta));
+      const newRadius = Math.max(2, Math.min(20, radius + delta));
       const angle = Math.atan2(camera.position.z, camera.position.x);
 
       camera.position.x = newRadius * Math.cos(angle);
@@ -271,25 +347,33 @@ export default function FarmMonitor() {
     canvasRef.current.addEventListener("mouseup", handleMouseUp);
     canvasRef.current.addEventListener("wheel", handleWheel);
 
-    // Animation loop
     const animate = () => {
       requestAnimationFrame(animate);
 
-      if (plotRef.current) {
-        plotRef.current.rotation.y += 0.005;
-      }
+      if (viewMode === "single") {
+        if (plotRef.current) {
+          plotRef.current.rotation.y += 0.005;
+        }
 
-      if (waterPlaneRef.current && waterPlaneRef.current.material) {
-        waterPlaneRef.current.material.opacity =
-          0.5 + Math.sin(Date.now() * 0.003) * 0.2;
-        waterPlaneRef.current.rotation.z += 0.001;
+        if (waterPlaneRef.current && waterPlaneRef.current.material) {
+          waterPlaneRef.current.material.opacity =
+            0.5 + Math.sin(Date.now() * 0.003) * 0.2;
+          waterPlaneRef.current.rotation.z += 0.001;
+        }
+      } else {
+        farmPlotsRef.current.forEach((plot, index) => {
+          if (plot.material && plot.material.transparent) {
+            plot.material.opacity =
+              0.5 + Math.sin(Date.now() * 0.003 + index * 0.1) * 0.2;
+            plot.rotation.z += 0.001;
+          }
+        });
       }
 
       renderer.render(scene, camera);
     };
     animate();
 
-    // Handle resize
     const handleResize = () => {
       if (!canvasRef.current) return;
       camera.aspect =
@@ -302,7 +386,6 @@ export default function FarmMonitor() {
     };
     window.addEventListener("resize", handleResize);
 
-    // Cleanup
     return () => {
       window.removeEventListener("resize", handleResize);
       if (canvasRef.current) {
@@ -317,31 +400,19 @@ export default function FarmMonitor() {
 
   return (
     <div className="w-screen h-screen bg-gradient-to-br from-black via-gray-900 to-emerald-950 flex overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse"></div>
         <div
-          className="absolute bottom-0 right-1/4 w-96 h-96 bg-green-500/20 rounded-full blur-3xl animate-pulse"
+          className="absolute bottom-20 right-1/4 w-96 h-96 bg-green-500/20 rounded-full blur-3xl animate-pulse"
           style={{ animationDelay: "1s" }}
+        ></div>
+        <div
+          className="absolute top-1/2 left-1/2 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "2s" }}
         ></div>
       </div>
 
-      {/* Sidebar */}
       <div className="w-96 bg-gradient-to-b from-gray-900/95 to-black/95 backdrop-blur-xl border-r border-emerald-500/20 p-6 flex flex-col gap-6 z-10 overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 bg-gradient-to-br from-emerald-500 to-green-600 rounded-xl shadow-lg shadow-emerald-500/30 text-2xl">
-            🌾
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">
-              AgriTech Pro
-            </h1>
-            <p className="text-xs text-gray-400">Single Plot Monitor</p>
-          </div>
-        </div>
-
-        {/* Sensor Panel */}
         <div
           className={`backdrop-blur-xl rounded-2xl p-5 border transition-all duration-300 ${
             connected
@@ -378,7 +449,6 @@ export default function FarmMonitor() {
             </button>
           </div>
 
-          {/* Data Cards */}
           <div className="space-y-4 mb-5">
             <div className="bg-gradient-to-br from-gray-800/60 to-gray-900/60 border border-emerald-500/15 rounded-xl p-4 hover:border-emerald-500/40 transition-all hover:-translate-y-1">
               <div className="flex items-center gap-3 mb-3">
@@ -467,7 +537,6 @@ export default function FarmMonitor() {
           </button>
         </div>
 
-        {/* Plot Info */}
         <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 backdrop-blur-xl rounded-2xl p-5 border border-emerald-500/20">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
@@ -498,7 +567,6 @@ export default function FarmMonitor() {
           </div>
         </div>
 
-        {/* Alert */}
         <div className="bg-gradient-to-br from-amber-900/20 to-orange-900/20 backdrop-blur-xl rounded-2xl p-4 border border-amber-500/30">
           <div className="flex items-center gap-2 mb-2">
             <Wind className="w-4 h-4 text-amber-400" />
@@ -512,30 +580,50 @@ export default function FarmMonitor() {
         </div>
       </div>
 
-      {/* Main Area */}
       <div className="flex-1 flex flex-col p-6 z-10">
-        {/* Top Bar */}
-        <div className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-xl rounded-2xl p-5 mb-6 border border-emerald-500/20 shadow-xl">
-          <h2 className="text-2xl font-bold text-white mb-1">
-            Live 3D Plot Visualization
-          </h2>
-          <p className="text-sm text-gray-400">
-            Real-time sensor data visualization
-          </p>
+        <div className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-xl rounded-2xl p-5 mb-6 border border-emerald-500/20 shadow-xl flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-1">
+              Live 3D Plot Visualization
+            </h2>
+            <p className="text-sm text-gray-400">
+              Real-time sensor data visualization
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 bg-gray-800/60 rounded-xl p-1.5 border border-emerald-500/20">
+            <button
+              onClick={() => setViewMode("farm")}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${
+                viewMode === "farm"
+                  ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/30"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              Farm View
+            </button>
+            <button
+              onClick={() => setViewMode("single")}
+              className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-300 ${
+                viewMode === "single"
+                  ? "bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/30"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              Live Sensor
+            </button>
+          </div>
         </div>
 
-        {/* 3D Canvas */}
         <div className="flex-1 bg-gradient-to-br from-gray-900/50 to-black/50 backdrop-blur-xl rounded-2xl overflow-hidden border border-emerald-500/20 shadow-2xl shadow-emerald-500/10 relative">
           <canvas ref={canvasRef} className="w-full h-full" />
 
-          {/* Condition Badge */}
           <div
             className={`absolute top-5 right-5 bg-gray-900/95 backdrop-blur-xl border-2 rounded-xl px-5 py-3 font-semibold text-base ${getConditionColor()}`}
           >
             {getConditionText()}
           </div>
 
-          {/* Legend */}
           <div className="absolute bottom-5 left-5 bg-gray-900/95 backdrop-blur-xl border border-emerald-500/20 rounded-xl p-4">
             <div className="text-white font-semibold mb-3 text-sm">
               Field Conditions
