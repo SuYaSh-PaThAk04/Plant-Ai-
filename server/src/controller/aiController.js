@@ -39,6 +39,9 @@ export const analyzeImage = async (req, res) => {
       }
     }
     Respond **only** in JSON format without any extra text.
+    If the uploaded image does NOT appear to contain a plant (for example, if it shows a person, animal, car, object, or background scenery), do NOT attempt to classify a disease. 
+Instead, respond exactly with:
+"Please upload a valid plant image."
     `;
 
     // 🧠 Generate AI response
