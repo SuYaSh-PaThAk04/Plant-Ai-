@@ -630,7 +630,7 @@ export default function Dashboard() {
       // Since AGMARKNET doesn't have a direct free API, we'll use demo data
       // In production, you could integrate with data.gov.in API or web scraping
 
-      await new Promise((resolve) => setTimeout(resolve, 1500)); // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 3000)); // Simulate API call
 
       const demoMarketData = [
         {
@@ -714,7 +714,7 @@ export default function Dashboard() {
       ];
 
       setMarketPrices({
-        market: "Meerut Mandi",
+        market: "Barabanki Mandi",
         date: new Date().toLocaleDateString("en-IN"),
         commodities: demoMarketData,
       });
