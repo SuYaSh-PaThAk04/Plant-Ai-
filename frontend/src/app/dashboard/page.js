@@ -493,51 +493,6 @@ export default function Dashboard() {
     ];
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setLoadingAI(true);
-    setAnalysis(null);
-    setImagePreview(URL.createObjectURL(file));
-
-    const formData = new FormData();
-    formData.append("image", file);
-
-    try {
-      const res = await fetch("http://localhost:5000/api/ai/analyze", {
-        method: "POST",
-        body: formData,
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 8000));
-
-      if (!res.ok) {
-        console.warn("AI API error. Using fallback data.");
-        setAnalysis(getRandomFallback());
-        return;
-      }
-
-      const data = await res.json();
-
-      if (
-        !data ||
-        Object.keys(data).length === 0 ||
-        !data.disease ||
-        data.disease.trim() === ""
-      ) {
-        console.warn("Empty or invalid API response. Using fallback data.");
-        setAnalysis(getRandomFallback());
-      } else {
-        setAnalysis(data);
-      }
-    } catch (err) {
-      console.error("AI analysis failed:", err);
-      setAnalysis(getRandomFallback());
-    } finally {
-      setLoadingAI(false);
-    }
-  };
-
   const fetchSoilInfo = async () => {
     setLoadingSoil(true);
     try {
@@ -683,7 +638,6 @@ export default function Dashboard() {
 
       const { latitude, longitude } = position.coords;
 
-      // Fetch soil data from SoilGrids API
       const soilRes = await fetch(
         `https://rest.isric.org/soilgrids/v2.0/properties/query?lon=${longitude}&lat=${latitude}&property=phh2o&property=soc&property=clay&property=sand&depth=0-5cm&value=mean`
       );
@@ -700,7 +654,6 @@ export default function Dashboard() {
         };
       }
 
-      // Fetch weather data
       const weatherRes = await fetch(
         `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto&past_days=7&forecast_days=7`
       );
@@ -722,7 +675,6 @@ export default function Dashboard() {
         };
       }
 
-      // Get location name
       const geoRes = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
       );
@@ -733,7 +685,7 @@ export default function Dashboard() {
         geoJson.address.village ||
         "Your Location";
 
-      // Crop recommendation logic
+
       const crops = recommendCrops(soilData, climateData);
 
       setCropRecommendations({
@@ -1951,1736 +1903,1731 @@ Pesticides: ${farmAnalytics.resourceUsage.pesticides.used}/${
   };
 
   return (
-    
-      <main className="min-h-screen bg-gradient-to-br from-gray-950 via-green-950 to-gray-900 text-gray-100 px-6 py-12 font-sans">
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-green-500/5 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl"></div>
-        </div>
+    <main className="min-h-screen bg-gradient-to-br from-gray-950 via-green-950 to-gray-900 text-gray-100 px-6 py-12 font-sans">
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-green-500/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl"></div>
+      </div>
 
-        <div className="relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h1 className="text-6xl font-black bg-gradient-to-r from-green-400 via-emerald-500 to-green-600 bg-clip-text text-transparent mb-4">
-              Smart Farm Dashboard
-            </h1>
-            <p className="text-gray-400 text-lg">
-              Real-time agricultural intelligence at your fingertips
-            </p>
-          </motion.div>
+      <div className="relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center mb-16"
+        >
+          <h1 className="text-6xl font-black bg-gradient-to-r from-green-400 via-emerald-500 to-green-600 bg-clip-text text-transparent mb-4">
+            Smart Farm Dashboard
+          </h1>
+          <p className="text-gray-400 text-lg">
+            Real-time agricultural intelligence at your fingertips
+          </p>
+          <div className="absolute inset-0">
+            <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse"></div>
+            <div
+              className="absolute bottom-20 right-1/4 w-96 h-96 bg-green-500/20 rounded-full blur-3xl animate-pulse"
+              style={{ animationDelay: "1s" }}
+            ></div>
+            <div
+              className="absolute top-1/2 left-1/2 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
+              style={{ animationDelay: "2s" }}
+            ></div>
+          </div>
+        </motion.div>
 
-          {/* Farm Dashboard Analytics */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.2, duration: 0.6 }}
-            className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-pink-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-pink-500/20 mb-16"
-          >
-            <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-pink-400 to-rose-500 bg-clip-text mb-8 text-center">
-              📈 Farm Dashboard Analytics
-            </h2>
+        {/* Farm Dashboard Analytics */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2, duration: 0.6 }}
+          className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-pink-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-pink-500/20 mb-16"
+        >
+          <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-pink-400 to-rose-500 bg-clip-text mb-8 text-center">
+            📈 Farm Dashboard Analytics
+          </h2>
 
-            <div className="flex justify-center space-x-4 mb-8">
-              <button
-                onClick={generateAnalytics}
-                className="px-8 py-4 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white rounded-xl font-semibold shadow-lg shadow-pink-500/30 hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105"
-              >
-                📊 Generate Analytics
-              </button>
-              {farmAnalytics && (
-                <button
-                  onClick={exportReport}
-                  className="px-8 py-4 bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white rounded-xl font-semibold shadow-lg transition-all duration-300 hover:scale-105"
-                >
-                  📥 Export Report
-                </button>
-              )}
-            </div>
-
+          <div className="flex justify-center space-x-4 mb-8">
+            <button
+              onClick={generateAnalytics}
+              className="px-8 py-4 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white rounded-xl font-semibold shadow-lg shadow-pink-500/30 hover:shadow-pink-500/50 transition-all duration-300 hover:scale-105"
+            >
+              📊 Generate Analytics
+            </button>
             {farmAnalytics && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="space-y-6"
+              <button
+                onClick={exportReport}
+                className="px-8 py-4 bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white rounded-xl font-semibold shadow-lg transition-all duration-300 hover:scale-105"
               >
-                {/* Overview Cards */}
-                <div className="grid md:grid-cols-5 gap-4">
-                  <div className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 p-4 rounded-xl border border-blue-500/30 text-center">
-                    <p className="text-gray-400 text-xs mb-1">Total Crops</p>
-                    <p className="text-3xl font-bold text-white">
-                      {farmAnalytics.overview.totalCrops}
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 p-4 rounded-xl border border-green-500/30 text-center">
-                    <p className="text-gray-400 text-xs mb-1">Active Area</p>
-                    <p className="text-3xl font-bold text-white">
-                      {farmAnalytics.overview.activeArea}
-                    </p>
-                    <p className="text-gray-500 text-xs">acres</p>
-                  </div>
-                  <div className="bg-gradient-to-br from-orange-600/20 to-red-600/20 p-4 rounded-xl border border-orange-500/30 text-center">
-                    <p className="text-gray-400 text-xs mb-1">Investment</p>
-                    <p className="text-2xl font-bold text-white">
-                      ₹
-                      {(farmAnalytics.overview.totalInvestment / 1000).toFixed(
-                        0
-                      )}
-                      K
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 p-4 rounded-xl border border-purple-500/30 text-center">
-                    <p className="text-gray-400 text-xs mb-1">Revenue</p>
-                    <p className="text-2xl font-bold text-white">
-                      ₹
-                      {(farmAnalytics.overview.expectedRevenue / 1000).toFixed(
-                        0
-                      )}
-                      K
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-yellow-600/20 to-amber-600/20 p-4 rounded-xl border border-yellow-500/30 text-center">
-                    <p className="text-gray-400 text-xs mb-1">Profit Margin</p>
-                    <p className="text-3xl font-bold text-green-400">
-                      {farmAnalytics.overview.profitMargin}%
-                    </p>
-                  </div>
-                </div>
-
-                {/* Crop-wise Data */}
-                <div>
-                  <h3 className="text-pink-400 font-bold text-xl mb-4">
-                    Crop-wise Performance
-                  </h3>
-                  <div className="space-y-3">
-                    {farmAnalytics.cropData.map((crop, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="bg-gray-800/50 p-4 rounded-xl border border-pink-500/20"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-white font-bold">{crop.crop}</h4>
-                          <span className="px-3 py-1 bg-pink-600/30 text-pink-300 rounded-full text-xs">
-                            {crop.status}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <p className="text-gray-400 text-xs">Area</p>
-                            <p className="text-white font-semibold">
-                              {crop.area} acres
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-gray-400 text-xs">Investment</p>
-                            <p className="text-white font-semibold">
-                              ₹{(crop.investment / 1000).toFixed(0)}K
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-gray-400 text-xs">Revenue</p>
-                            <p className="text-green-400 font-semibold">
-                              ₹{(crop.revenue / 1000).toFixed(0)}K
-                            </p>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Resource Usage */}
-                <div>
-                  <h3 className="text-pink-400 font-bold text-xl mb-4">
-                    Resource Usage
-                  </h3>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    {Object.entries(farmAnalytics.resourceUsage).map(
-                      ([key, data], i) => {
-                        const percentage = (data.used / data.limit) * 100;
-                        return (
-                          <div
-                            key={i}
-                            className="bg-gray-800/50 p-4 rounded-xl border border-pink-500/20"
-                          >
-                            <p className="text-gray-400 text-sm mb-2 capitalize">
-                              {key}
-                            </p>
-                            <div className="flex items-end justify-between mb-2">
-                              <span className="text-2xl font-bold text-white">
-                                {data.used}
-                              </span>
-                              <span className="text-gray-400 text-sm">
-                                / {data.limit} {data.unit}
-                              </span>
-                            </div>
-                            <div className="w-full bg-gray-700 rounded-full h-2">
-                              <div
-                                className={`h-2 rounded-full ${
-                                  percentage > 80
-                                    ? "bg-red-500"
-                                    : percentage > 60
-                                    ? "bg-yellow-500"
-                                    : "bg-green-500"
-                                }`}
-                                style={{ width: `${percentage}%` }}
-                              ></div>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {percentage.toFixed(0)}% used
-                            </p>
-                          </div>
-                        );
-                      }
-                    )}
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-gray-900/80 to-pink-950/40 p-6 rounded-2xl border border-pink-500/20">
-                  <h3 className="text-pink-400 font-bold text-lg mb-4">
-                    System Alerts
-                  </h3>
-                  <div className="space-y-2">
-                    {farmAnalytics.alerts.map((alert, i) => (
-                      <div
-                        key={i}
-                        className={`p-3 rounded-lg ${
-                          alert.type === "success"
-                            ? "bg-green-600/20 text-green-300"
-                            : alert.type === "warning"
-                            ? "bg-yellow-600/20 text-yellow-300"
-                            : "bg-blue-600/20 text-blue-300"
-                        }`}
-                      >
-                        {alert.message}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
+                📥 Export Report
+              </button>
             )}
+          </div>
 
-            {!farmAnalytics && (
-              <div className="text-center py-8">
-                <div className="text-6xl mb-4">📈</div>
-                <p className="text-gray-400 text-lg">
-                  Generate comprehensive analytics for your farm
-                </p>
-              </div>
-            )}
-          </motion.section>
-          {/* Farm Calculator Suite */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9, duration: 0.6 }}
-            className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-cyan-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-cyan-500/20 mb-16"
-          >
-            <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text mb-8 text-center">
-              🧮 Farm Calculator Suite
-            </h2>
-
-            <div className="grid md:grid-cols-3 gap-4 mb-8">
-              {[
-                { type: "seedRate", label: "Seed Rate", icon: "🌾" },
-                { type: "irrigation", label: "Irrigation", icon: "💧" },
-                { type: "yield", label: "Yield Estimator", icon: "📊" },
-                { type: "profit", label: "Profit Calculator", icon: "💰" },
-                { type: "landConverter", label: "Land Converter", icon: "📏" },
-                { type: "sprayDilution", label: "Spray Dilution", icon: "🚿" },
-              ].map((calc, i) => (
-                <motion.button
-                  key={i}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setCalculatorType(calc.type)}
-                  className={`p-4 rounded-xl border transition-all ${
-                    calculatorType === calc.type
-                      ? "bg-cyan-600/30 border-cyan-500/60"
-                      : "bg-gray-800/50 border-cyan-500/20 hover:border-cyan-500/40"
-                  }`}
-                >
-                  <div className="text-3xl mb-2">{calc.icon}</div>
-                  <p className="text-white text-sm font-semibold">
-                    {calc.label}
+          {farmAnalytics && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="space-y-6"
+            >
+              {/* Overview Cards */}
+              <div className="grid md:grid-cols-5 gap-4">
+                <div className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 p-4 rounded-xl border border-blue-500/30 text-center">
+                  <p className="text-gray-400 text-xs mb-1">Total Crops</p>
+                  <p className="text-3xl font-bold text-white">
+                    {farmAnalytics.overview.totalCrops}
                   </p>
-                </motion.button>
-              ))}
-            </div>
-
-            {calculatorType === "seedRate" && (
-              <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
-                <h3 className="text-cyan-400 font-bold mb-4">
-                  Seed Rate Calculator
-                </h3>
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <input
-                    type="number"
-                    id="seedsPerKg"
-                    placeholder="Seeds per kg (e.g., 40000)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                  <input
-                    type="number"
-                    id="germination"
-                    placeholder="Germination % (e.g., 85)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                  <input
-                    type="number"
-                    id="plantPop"
-                    placeholder="Plant population (e.g., 400000)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
                 </div>
-                <button
-                  onClick={() =>
-                    calculateFarmMetrics("seedRate", {
-                      seedsPerKg: parseFloat(
-                        document.getElementById("seedsPerKg").value
-                      ),
-                      germination: parseFloat(
-                        document.getElementById("germination").value
-                      ),
-                      plantPopulation: parseFloat(
-                        document.getElementById("plantPop").value
-                      ),
-                    })
-                  }
-                  className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white font-semibold"
-                >
-                  Calculate
-                </button>
+                <div className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 p-4 rounded-xl border border-green-500/30 text-center">
+                  <p className="text-gray-400 text-xs mb-1">Active Area</p>
+                  <p className="text-3xl font-bold text-white">
+                    {farmAnalytics.overview.activeArea}
+                  </p>
+                  <p className="text-gray-500 text-xs">acres</p>
+                </div>
+                <div className="bg-gradient-to-br from-orange-600/20 to-red-600/20 p-4 rounded-xl border border-orange-500/30 text-center">
+                  <p className="text-gray-400 text-xs mb-1">Investment</p>
+                  <p className="text-2xl font-bold text-white">
+                    ₹
+                    {(farmAnalytics.overview.totalInvestment / 1000).toFixed(0)}
+                    K
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 p-4 rounded-xl border border-purple-500/30 text-center">
+                  <p className="text-gray-400 text-xs mb-1">Revenue</p>
+                  <p className="text-2xl font-bold text-white">
+                    ₹
+                    {(farmAnalytics.overview.expectedRevenue / 1000).toFixed(0)}
+                    K
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-yellow-600/20 to-amber-600/20 p-4 rounded-xl border border-yellow-500/30 text-center">
+                  <p className="text-gray-400 text-xs mb-1">Profit Margin</p>
+                  <p className="text-3xl font-bold text-green-400">
+                    {farmAnalytics.overview.profitMargin}%
+                  </p>
+                </div>
               </div>
-            )}
 
-            {calculatorType === "irrigation" && (
-              <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
-                <h3 className="text-cyan-400 font-bold mb-4">
-                  Irrigation Calculator
+              {/* Crop-wise Data */}
+              <div>
+                <h3 className="text-pink-400 font-bold text-xl mb-4">
+                  Crop-wise Performance
                 </h3>
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <input
-                    type="number"
-                    id="waterReq"
-                    placeholder="Crop water need (mm)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                  <input
-                    type="number"
-                    id="rainfall"
-                    placeholder="Expected rainfall (mm)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                  <input
-                    type="number"
-                    id="efficiency"
-                    placeholder="Efficiency % (e.g., 70)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
+                <div className="space-y-3">
+                  {farmAnalytics.cropData.map((crop, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="bg-gray-800/50 p-4 rounded-xl border border-pink-500/20"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-white font-bold">{crop.crop}</h4>
+                        <span className="px-3 py-1 bg-pink-600/30 text-pink-300 rounded-full text-xs">
+                          {crop.status}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="text-gray-400 text-xs">Area</p>
+                          <p className="text-white font-semibold">
+                            {crop.area} acres
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 text-xs">Investment</p>
+                          <p className="text-white font-semibold">
+                            ₹{(crop.investment / 1000).toFixed(0)}K
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-gray-400 text-xs">Revenue</p>
+                          <p className="text-green-400 font-semibold">
+                            ₹{(crop.revenue / 1000).toFixed(0)}K
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-                <button
-                  onClick={() =>
-                    calculateFarmMetrics("irrigation", {
-                      waterReq: parseFloat(
-                        document.getElementById("waterReq").value
-                      ),
-                      rainfall: parseFloat(
-                        document.getElementById("rainfall").value
-                      ),
-                      efficiency: parseFloat(
-                        document.getElementById("efficiency").value
-                      ),
-                    })
-                  }
-                  className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white font-semibold"
-                >
-                  Calculate
-                </button>
               </div>
-            )}
 
-            {calculatorType === "yield" && (
-              <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
-                <h3 className="text-cyan-400 font-bold mb-4">
-                  Yield Estimator
+              {/* Resource Usage */}
+              <div>
+                <h3 className="text-pink-400 font-bold text-xl mb-4">
+                  Resource Usage
                 </h3>
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <input
-                    type="number"
-                    id="area"
-                    placeholder="Area (acres)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                  <input
-                    type="number"
-                    id="density"
-                    placeholder="Plant density (plants/acre)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                  <input
-                    type="number"
-                    id="yieldPerPlant"
-                    placeholder="Yield per plant (kg)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                  <input
-                    type="number"
-                    id="price"
-                    placeholder="Market price (₹/kg)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
+                <div className="grid md:grid-cols-3 gap-4">
+                  {Object.entries(farmAnalytics.resourceUsage).map(
+                    ([key, data], i) => {
+                      const percentage = (data.used / data.limit) * 100;
+                      return (
+                        <div
+                          key={i}
+                          className="bg-gray-800/50 p-4 rounded-xl border border-pink-500/20"
+                        >
+                          <p className="text-gray-400 text-sm mb-2 capitalize">
+                            {key}
+                          </p>
+                          <div className="flex items-end justify-between mb-2">
+                            <span className="text-2xl font-bold text-white">
+                              {data.used}
+                            </span>
+                            <span className="text-gray-400 text-sm">
+                              / {data.limit} {data.unit}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-700 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${
+                                percentage > 80
+                                  ? "bg-red-500"
+                                  : percentage > 60
+                                  ? "bg-yellow-500"
+                                  : "bg-green-500"
+                              }`}
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {percentage.toFixed(0)}% used
+                          </p>
+                        </div>
+                      );
+                    }
+                  )}
                 </div>
-                <button
-                  onClick={() =>
-                    calculateFarmMetrics("yield", {
-                      area: parseFloat(document.getElementById("area").value),
-                      density: parseFloat(
-                        document.getElementById("density").value
-                      ),
-                      yieldPerPlant: parseFloat(
-                        document.getElementById("yieldPerPlant").value
-                      ),
-                      price: parseFloat(document.getElementById("price").value),
-                    })
-                  }
-                  className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white font-semibold"
-                >
-                  Calculate
-                </button>
               </div>
-            )}
-
-            {calculatorType === "profit" && (
-              <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
-                <h3 className="text-cyan-400 font-bold mb-4">
-                  Profit Calculator
+              <div className="bg-gradient-to-br from-gray-900/80 to-pink-950/40 p-6 rounded-2xl border border-pink-500/20">
+                <h3 className="text-pink-400 font-bold text-lg mb-4">
+                  System Alerts
                 </h3>
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <input
-                    type="number"
-                    id="investment"
-                    placeholder="Total investment (₹)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                  <input
-                    type="number"
-                    id="revenue"
-                    placeholder="Total revenue (₹)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                  <input
-                    type="number"
-                    id="profitArea"
-                    placeholder="Area (acres)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                </div>
-                <button
-                  onClick={() =>
-                    calculateFarmMetrics("profit", {
-                      investment: parseFloat(
-                        document.getElementById("investment").value
-                      ),
-                      revenue: parseFloat(
-                        document.getElementById("revenue").value
-                      ),
-                      area: parseFloat(
-                        document.getElementById("profitArea").value
-                      ),
-                    })
-                  }
-                  className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white font-semibold"
-                >
-                  Calculate
-                </button>
-              </div>
-            )}
-
-            {calculatorType === "landConverter" && (
-              <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
-                <h3 className="text-cyan-400 font-bold mb-4">
-                  Land Area Converter
-                </h3>
-                <div className="mb-4">
-                  <input
-                    type="number"
-                    id="landValue"
-                    placeholder="Enter area in Acres"
-                    className="w-full px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                </div>
-                <button
-                  onClick={() =>
-                    calculateFarmMetrics("landConverter", {
-                      value: parseFloat(
-                        document.getElementById("landValue").value
-                      ),
-                    })
-                  }
-                  className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white font-semibold"
-                >
-                  Convert
-                </button>
-              </div>
-            )}
-
-            {calculatorType === "sprayDilution" && (
-              <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
-                <h3 className="text-cyan-400 font-bold mb-4">
-                  Spray Dilution Calculator
-                </h3>
-                <div className="grid md:grid-cols-2 gap-4 mb-4">
-                  <input
-                    type="number"
-                    id="productRate"
-                    placeholder="Product rate (ml/acre)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                  <input
-                    type="number"
-                    id="waterVolume"
-                    placeholder="Water volume (L/acre)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                  <input
-                    type="number"
-                    id="sprayArea"
-                    placeholder="Spray area (acres)"
-                    className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
-                  />
-                </div>
-                <button
-                  onClick={() =>
-                    calculateFarmMetrics("sprayDilution", {
-                      productRate: parseFloat(
-                        document.getElementById("productRate").value
-                      ),
-                      waterVolume: parseFloat(
-                        document.getElementById("waterVolume").value
-                      ),
-                      sprayArea: parseFloat(
-                        document.getElementById("sprayArea").value
-                      ),
-                    })
-                  }
-                  className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white font-semibold"
-                >
-                  Calculate
-                </button>
-              </div>
-            )}
-
-            {calculatorResult && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-6 bg-gradient-to-br from-cyan-600/20 to-blue-600/20 p-6 rounded-xl border border-cyan-500/40"
-              >
-                <div className="flex items-center space-x-3 mb-4">
-                  <span className="text-4xl">{calculatorResult.icon}</span>
-                  <h3 className="text-cyan-300 font-bold text-xl">
-                    {calculatorResult.title}
-                  </h3>
-                </div>
-                <p className="text-3xl font-black text-white mb-4">
-                  {calculatorResult.mainResult}
-                </p>
                 <div className="space-y-2">
-                  {calculatorResult.details.map((detail, i) => (
+                  {farmAnalytics.alerts.map((alert, i) => (
                     <div
                       key={i}
-                      className={`flex justify-between text-sm ${
-                        detail.highlight
-                          ? "text-green-400 font-bold"
-                          : "text-gray-300"
+                      className={`p-3 rounded-lg ${
+                        alert.type === "success"
+                          ? "bg-green-600/20 text-green-300"
+                          : alert.type === "warning"
+                          ? "bg-yellow-600/20 text-yellow-300"
+                          : "bg-blue-600/20 text-blue-300"
                       }`}
                     >
-                      <span>{detail.label}:</span>
-                      <span>{detail.value}</span>
+                      {alert.message}
                     </div>
                   ))}
                 </div>
-                <p className="mt-4 text-cyan-400 text-sm italic">
-                  💡 Tip: {calculatorResult.tip}
-                </p>
-              </motion.div>
-            )}
-          </motion.section>
+              </div>
+            </motion.div>
+          )}
 
-          {/* Weather & Irrigation - MOVED TO TOP */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-blue-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-blue-500/20 mb-16"
-          >
-            <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-blue-400 to-cyan-500 bg-clip-text mb-8 text-center">
-              🌦️ Weather & Irrigation Forecast
-            </h2>
+          {!farmAnalytics && (
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">📈</div>
+              <p className="text-gray-400 text-lg">
+                Generate comprehensive analytics for your farm
+              </p>
+            </div>
+          )}
+        </motion.section>
+        {/* Farm Calculator Suite */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9, duration: 0.6 }}
+          className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-cyan-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-cyan-500/20 mb-16"
+        >
+          <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text mb-8 text-center">
+            🧮 Farm Calculator Suite
+          </h2>
 
-            <div className="flex justify-center mb-8">
-              <button
-                onClick={fetchWeatherAndIrrigation}
-                disabled={loadingWeather}
-                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:from-gray-700 disabled:to-gray-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+          <div className="grid md:grid-cols-3 gap-4 mb-8">
+            {[
+              { type: "seedRate", label: "Seed Rate", icon: "🌾" },
+              { type: "irrigation", label: "Irrigation", icon: "💧" },
+              { type: "yield", label: "Yield Estimator", icon: "📊" },
+              { type: "profit", label: "Profit Calculator", icon: "💰" },
+              { type: "landConverter", label: "Land Converter", icon: "📏" },
+              { type: "sprayDilution", label: "Spray Dilution", icon: "🚿" },
+            ].map((calc, i) => (
+              <motion.button
+                key={i}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setCalculatorType(calc.type)}
+                className={`p-4 rounded-xl border transition-all ${
+                  calculatorType === calc.type
+                    ? "bg-cyan-600/30 border-cyan-500/60"
+                    : "bg-gray-800/50 border-cyan-500/20 hover:border-cyan-500/40"
+                }`}
               >
-                {loadingWeather
-                  ? "⏳ Fetching Weather..."
-                  : "📍 Get Weather & Irrigation Advice"}
+                <div className="text-3xl mb-2">{calc.icon}</div>
+                <p className="text-white text-sm font-semibold">{calc.label}</p>
+              </motion.button>
+            ))}
+          </div>
+
+          {calculatorType === "seedRate" && (
+            <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
+              <h3 className="text-cyan-400 font-bold mb-4">
+                Seed Rate Calculator
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <input
+                  type="number"
+                  id="seedsPerKg"
+                  placeholder="Seeds per kg (e.g., 40000)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+                <input
+                  type="number"
+                  id="germination"
+                  placeholder="Germination % (e.g., 85)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+                <input
+                  type="number"
+                  id="plantPop"
+                  placeholder="Plant population (e.g., 400000)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+              </div>
+              <button
+                onClick={() =>
+                  calculateFarmMetrics("seedRate", {
+                    seedsPerKg: parseFloat(
+                      document.getElementById("seedsPerKg").value
+                    ),
+                    germination: parseFloat(
+                      document.getElementById("germination").value
+                    ),
+                    plantPopulation: parseFloat(
+                      document.getElementById("plantPop").value
+                    ),
+                  })
+                }
+                className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white font-semibold"
+              >
+                Calculate
               </button>
             </div>
+          )}
 
-            {loadingWeather && (
-              <motion.div
-                animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-                className="flex flex-col items-center space-y-3"
+          {calculatorType === "irrigation" && (
+            <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
+              <h3 className="text-cyan-400 font-bold mb-4">
+                Irrigation Calculator
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <input
+                  type="number"
+                  id="waterReq"
+                  placeholder="Crop water need (mm)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+                <input
+                  type="number"
+                  id="rainfall"
+                  placeholder="Expected rainfall (mm)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+                <input
+                  type="number"
+                  id="efficiency"
+                  placeholder="Efficiency % (e.g., 70)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+              </div>
+              <button
+                onClick={() =>
+                  calculateFarmMetrics("irrigation", {
+                    waterReq: parseFloat(
+                      document.getElementById("waterReq").value
+                    ),
+                    rainfall: parseFloat(
+                      document.getElementById("rainfall").value
+                    ),
+                    efficiency: parseFloat(
+                      document.getElementById("efficiency").value
+                    ),
+                  })
+                }
+                className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white font-semibold"
               >
-                <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
-                <p className="text-blue-400 font-medium">
-                  🌍 Getting your location and weather data...
+                Calculate
+              </button>
+            </div>
+          )}
+
+          {calculatorType === "yield" && (
+            <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
+              <h3 className="text-cyan-400 font-bold mb-4">Yield Estimator</h3>
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <input
+                  type="number"
+                  id="area"
+                  placeholder="Area (acres)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+                <input
+                  type="number"
+                  id="density"
+                  placeholder="Plant density (plants/acre)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+                <input
+                  type="number"
+                  id="yieldPerPlant"
+                  placeholder="Yield per plant (kg)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+                <input
+                  type="number"
+                  id="price"
+                  placeholder="Market price (₹/kg)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+              </div>
+              <button
+                onClick={() =>
+                  calculateFarmMetrics("yield", {
+                    area: parseFloat(document.getElementById("area").value),
+                    density: parseFloat(
+                      document.getElementById("density").value
+                    ),
+                    yieldPerPlant: parseFloat(
+                      document.getElementById("yieldPerPlant").value
+                    ),
+                    price: parseFloat(document.getElementById("price").value),
+                  })
+                }
+                className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white font-semibold"
+              >
+                Calculate
+              </button>
+            </div>
+          )}
+
+          {calculatorType === "profit" && (
+            <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
+              <h3 className="text-cyan-400 font-bold mb-4">
+                Profit Calculator
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <input
+                  type="number"
+                  id="investment"
+                  placeholder="Total investment (₹)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+                <input
+                  type="number"
+                  id="revenue"
+                  placeholder="Total revenue (₹)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+                <input
+                  type="number"
+                  id="profitArea"
+                  placeholder="Area (acres)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+              </div>
+              <button
+                onClick={() =>
+                  calculateFarmMetrics("profit", {
+                    investment: parseFloat(
+                      document.getElementById("investment").value
+                    ),
+                    revenue: parseFloat(
+                      document.getElementById("revenue").value
+                    ),
+                    area: parseFloat(
+                      document.getElementById("profitArea").value
+                    ),
+                  })
+                }
+                className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white font-semibold"
+              >
+                Calculate
+              </button>
+            </div>
+          )}
+
+          {calculatorType === "landConverter" && (
+            <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
+              <h3 className="text-cyan-400 font-bold mb-4">
+                Land Area Converter
+              </h3>
+              <div className="mb-4">
+                <input
+                  type="number"
+                  id="landValue"
+                  placeholder="Enter area in Acres"
+                  className="w-full px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+              </div>
+              <button
+                onClick={() =>
+                  calculateFarmMetrics("landConverter", {
+                    value: parseFloat(
+                      document.getElementById("landValue").value
+                    ),
+                  })
+                }
+                className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white font-semibold"
+              >
+                Convert
+              </button>
+            </div>
+          )}
+
+          {calculatorType === "sprayDilution" && (
+            <div className="bg-gray-800/50 p-6 rounded-xl border border-cyan-500/20">
+              <h3 className="text-cyan-400 font-bold mb-4">
+                Spray Dilution Calculator
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                <input
+                  type="number"
+                  id="productRate"
+                  placeholder="Product rate (ml/acre)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+                <input
+                  type="number"
+                  id="waterVolume"
+                  placeholder="Water volume (L/acre)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+                <input
+                  type="number"
+                  id="sprayArea"
+                  placeholder="Spray area (acres)"
+                  className="px-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-lg text-white"
+                />
+              </div>
+              <button
+                onClick={() =>
+                  calculateFarmMetrics("sprayDilution", {
+                    productRate: parseFloat(
+                      document.getElementById("productRate").value
+                    ),
+                    waterVolume: parseFloat(
+                      document.getElementById("waterVolume").value
+                    ),
+                    sprayArea: parseFloat(
+                      document.getElementById("sprayArea").value
+                    ),
+                  })
+                }
+                className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-white font-semibold"
+              >
+                Calculate
+              </button>
+            </div>
+          )}
+
+          {calculatorResult && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-6 bg-gradient-to-br from-cyan-600/20 to-blue-600/20 p-6 rounded-xl border border-cyan-500/40"
+            >
+              <div className="flex items-center space-x-3 mb-4">
+                <span className="text-4xl">{calculatorResult.icon}</span>
+                <h3 className="text-cyan-300 font-bold text-xl">
+                  {calculatorResult.title}
+                </h3>
+              </div>
+              <p className="text-3xl font-black text-white mb-4">
+                {calculatorResult.mainResult}
+              </p>
+              <div className="space-y-2">
+                {calculatorResult.details.map((detail, i) => (
+                  <div
+                    key={i}
+                    className={`flex justify-between text-sm ${
+                      detail.highlight
+                        ? "text-green-400 font-bold"
+                        : "text-gray-300"
+                    }`}
+                  >
+                    <span>{detail.label}:</span>
+                    <span>{detail.value}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-cyan-400 text-sm italic">
+                💡 Tip: {calculatorResult.tip}
+              </p>
+            </motion.div>
+          )}
+        </motion.section>
+
+        {/* Weather & Irrigation - MOVED TO TOP */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+          className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-blue-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-blue-500/20 mb-16"
+        >
+          <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-blue-400 to-cyan-500 bg-clip-text mb-8 text-center">
+            🌦️ Weather & Irrigation Forecast
+          </h2>
+
+          <div className="flex justify-center mb-8">
+            <button
+              onClick={fetchWeatherAndIrrigation}
+              disabled={loadingWeather}
+              className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:from-gray-700 disabled:to-gray-700 text-white rounded-xl font-semibold shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+            >
+              {loadingWeather
+                ? "⏳ Fetching Weather..."
+                : "📍 Get Weather & Irrigation Advice"}
+            </button>
+          </div>
+
+          {loadingWeather && (
+            <motion.div
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="flex flex-col items-center space-y-3"
+            >
+              <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+              <p className="text-blue-400 font-medium">
+                🌍 Getting your location and weather data...
+              </p>
+            </motion.div>
+          )}
+
+          {weatherData && !loadingWeather && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="space-y-6"
+            >
+              <div className="text-center mb-6">
+                <p className="text-gray-400 text-sm mb-1">Location</p>
+                <p className="text-2xl font-bold text-white flex items-center justify-center space-x-2">
+                  <span>📍</span>
+                  <span>{weatherData.location}</span>
                 </p>
-              </motion.div>
-            )}
+              </div>
 
-            {weatherData && !loadingWeather && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="space-y-6"
+              <div
+                className={`p-6 rounded-2xl border-2 ${
+                  weatherData.irrigation.needed
+                    ? "bg-gradient-to-br from-orange-600/30 to-red-600/30 border-orange-500/50"
+                    : "bg-gradient-to-br from-green-600/30 to-emerald-600/30 border-green-500/50"
+                }`}
               >
-                <div className="text-center mb-6">
-                  <p className="text-gray-400 text-sm mb-1">Location</p>
-                  <p className="text-2xl font-bold text-white flex items-center justify-center space-x-2">
-                    <span>📍</span>
-                    <span>{weatherData.location}</span>
-                  </p>
+                <div className="flex items-center space-x-3 mb-3">
+                  <span className="text-4xl">
+                    {weatherData.irrigation.needed ? "💧" : "✅"}
+                  </span>
+                  <h3
+                    className={`font-bold text-xl ${
+                      weatherData.irrigation.needed
+                        ? "text-orange-300"
+                        : "text-green-300"
+                    }`}
+                  >
+                    Irrigation Status
+                  </h3>
+                </div>
+                <p className="text-white text-lg font-semibold ml-12">
+                  {weatherData.irrigation.advice}
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="bg-gradient-to-br from-gray-800/80 to-blue-900/40 p-5 rounded-xl border border-blue-500/30">
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">☀️</div>
+                    <p className="text-gray-400 text-sm font-semibold mb-3">
+                      Today
+                    </p>
+                    <div className="space-y-2">
+                      <p className="text-blue-300 text-sm">Precipitation</p>
+                      <p className="text-2xl font-bold text-white">
+                        {weatherData.today.precipitation.toFixed(1)} mm
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div
-                  className={`p-6 rounded-2xl border-2 ${
-                    weatherData.irrigation.needed
-                      ? "bg-gradient-to-br from-orange-600/30 to-red-600/30 border-orange-500/50"
-                      : "bg-gradient-to-br from-green-600/30 to-emerald-600/30 border-green-500/50"
-                  }`}
-                >
-                  <div className="flex items-center space-x-3 mb-3">
-                    <span className="text-4xl">
-                      {weatherData.irrigation.needed ? "💧" : "✅"}
+                <div className="bg-gradient-to-br from-gray-800/80 to-blue-900/40 p-5 rounded-xl border border-blue-500/30 ring-2 ring-blue-400/50">
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">🌤️</div>
+                    <p className="text-blue-400 text-sm font-bold mb-3">
+                      Tomorrow
+                    </p>
+                    <div className="space-y-2">
+                      <p className="text-blue-300 text-sm">Precipitation</p>
+                      <p className="text-2xl font-bold text-white">
+                        {weatherData.tomorrow.precipitation.toFixed(1)} mm
+                      </p>
+                      <p className="text-blue-400 text-xs">
+                        Chance: {weatherData.tomorrow.probability}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-gray-800/80 to-blue-900/40 p-5 rounded-xl border border-blue-500/30">
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">🌥️</div>
+                    <p className="text-gray-400 text-sm font-semibold mb-3">
+                      Day After
+                    </p>
+                    <div className="space-y-2">
+                      <p className="text-blue-300 text-sm">Precipitation</p>
+                      <p className="text-2xl font-bold text-white">
+                        {weatherData.dayAfter.precipitation.toFixed(1)} mm
+                      </p>
+                      <p className="text-blue-400 text-xs">
+                        Chance: {weatherData.dayAfter.probability}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-gray-900/80 to-blue-950/40 p-6 rounded-2xl border border-blue-500/20">
+                <h3 className="text-blue-400 font-bold text-lg mb-4 flex items-center space-x-2">
+                  <span>💡</span>
+                  <span>Smart Irrigation Tips</span>
+                </h3>
+                <ul className="space-y-2 text-gray-300 text-sm">
+                  <li className="flex items-start space-x-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span>
+                      Best time to irrigate: Early morning (6-8 AM) or evening
+                      (6-8 PM)
                     </span>
-                    <h3
-                      className={`font-bold text-xl ${
-                        weatherData.irrigation.needed
-                          ? "text-orange-300"
-                          : "text-green-300"
-                      }`}
-                    >
-                      Irrigation Status
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span>
+                      Drip irrigation saves 30-50% more water than sprinkler
+                      systems
+                    </span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span>
+                      Check soil moisture before irrigating - overwatering can
+                      harm crops
+                    </span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span>
+                      Consider mulching to retain soil moisture and reduce
+                      irrigation needs
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </motion.div>
+          )}
+
+          {!weatherData && !loadingWeather && (
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">🌦️</div>
+              <p className="text-gray-400 text-lg">
+                Click the button above to get weather forecast and irrigation
+                recommendations
+              </p>
+              <p className="text-gray-500 text-sm mt-2">
+                {` We'll use your location to provide accurate local weather data`}
+              </p>
+            </div>
+          )}
+        </motion.section>
+
+        {/* Crop Recommendation System */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-emerald-950/40 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-emerald-500/20 mb-16"
+        >
+          <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text mb-8 text-center">
+            🌱 Smart Crop Recommendations
+          </h2>
+
+          <div className="flex justify-center mb-8">
+            <button
+              onClick={fetchCropRecommendations}
+              disabled={loadingCrops}
+              className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 disabled:from-gray-700 disabled:to-gray-700 text-white rounded-xl font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+            >
+              {loadingCrops ? "⏳ Analyzing..." : "🌍 Get Crop Recommendations"}
+            </button>
+          </div>
+
+          {loadingCrops && (
+            <motion.div
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="flex flex-col items-center space-y-3"
+            >
+              <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></div>
+              <p className="text-emerald-400 font-medium">
+                🌍 Analyzing soil, climate, and regional data...
+              </p>
+            </motion.div>
+          )}
+
+          {cropRecommendations && !loadingCrops && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="space-y-6"
+            >
+              {/* Location & Summary */}
+              <div className="text-center mb-6">
+                <p className="text-gray-400 text-sm mb-1">Analysis Location</p>
+                <p className="text-2xl font-bold text-white flex items-center justify-center space-x-2 mb-6">
+                  <span>📍</span>
+                  <span>{cropRecommendations.location}</span>
+                </p>
+              </div>
+
+              {/* Environmental Conditions */}
+              <div className="grid md:grid-cols-2 gap-4 mb-6">
+                {/* Climate Card */}
+                <div className="bg-gradient-to-br from-orange-600/20 to-amber-600/20 p-6 rounded-xl border border-orange-500/30">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <span className="text-4xl">🌡️</span>
+                    <h3 className="text-orange-300 font-bold text-lg">
+                      Climate Data
                     </h3>
                   </div>
-                  <p className="text-white text-lg font-semibold ml-12">
-                    {weatherData.irrigation.advice}
-                  </p>
+                  <div className="space-y-2 text-gray-300">
+                    <p className="flex justify-between">
+                      <span>Current Temp:</span>
+                      <span className="font-semibold text-white">
+                        {cropRecommendations.climate.currentTemp}°C
+                      </span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span>Avg Temp (14d):</span>
+                      <span className="font-semibold text-white">
+                        {cropRecommendations.climate.avgTemp}°C
+                      </span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span>Total Rainfall:</span>
+                      <span className="font-semibold text-white">
+                        {cropRecommendations.climate.totalRainfall} mm
+                      </span>
+                    </p>
+                  </div>
                 </div>
 
+                {/* Soil Card */}
+                <div className="bg-gradient-to-br from-yellow-700/20 to-orange-700/20 p-6 rounded-xl border border-yellow-600/30">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <span className="text-4xl">🏔️</span>
+                    <h3 className="text-yellow-300 font-bold text-lg">
+                      Soil Properties
+                    </h3>
+                  </div>
+                  <div className="space-y-2 text-gray-300">
+                    <p className="flex justify-between">
+                      <span>pH Level:</span>
+                      <span className="font-semibold text-white">
+                        {cropRecommendations.soil.ph.toFixed(1)}
+                      </span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span>Organic Carbon:</span>
+                      <span className="font-semibold text-white">
+                        {cropRecommendations.soil.organicCarbon.toFixed(1)}%
+                      </span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span>Clay Content:</span>
+                      <span className="font-semibold text-white">
+                        {cropRecommendations.soil.clay.toFixed(0)}%
+                      </span>
+                    </p>
+                    <p className="flex justify-between">
+                      <span>Sand Content:</span>
+                      <span className="font-semibold text-white">
+                        {cropRecommendations.soil.sand.toFixed(0)}%
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Soil Health Indicators */}
+              <div className="bg-gradient-to-br from-gray-900/80 to-emerald-950/40 p-6 rounded-2xl border border-emerald-500/20 mb-6">
+                <h3 className="text-emerald-400 font-bold text-lg mb-4 flex items-center space-x-2">
+                  <span>📊</span>
+                  <span>Soil Health Assessment</span>
+                </h3>
                 <div className="grid md:grid-cols-3 gap-4">
-                  <div className="bg-gradient-to-br from-gray-800/80 to-blue-900/40 p-5 rounded-xl border border-blue-500/30">
-                    <div className="text-center">
-                      <div className="text-3xl mb-2">☀️</div>
-                      <p className="text-gray-400 text-sm font-semibold mb-3">
-                        Today
-                      </p>
-                      <div className="space-y-2">
-                        <p className="text-blue-300 text-sm">Precipitation</p>
-                        <p className="text-2xl font-bold text-white">
-                          {weatherData.today.precipitation.toFixed(1)} mm
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-gray-800/80 to-blue-900/40 p-5 rounded-xl border border-blue-500/30 ring-2 ring-blue-400/50">
-                    <div className="text-center">
-                      <div className="text-3xl mb-2">🌤️</div>
-                      <p className="text-blue-400 text-sm font-bold mb-3">
-                        Tomorrow
-                      </p>
-                      <div className="space-y-2">
-                        <p className="text-blue-300 text-sm">Precipitation</p>
-                        <p className="text-2xl font-bold text-white">
-                          {weatherData.tomorrow.precipitation.toFixed(1)} mm
-                        </p>
-                        <p className="text-blue-400 text-xs">
-                          Chance: {weatherData.tomorrow.probability}%
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-gray-800/80 to-blue-900/40 p-5 rounded-xl border border-blue-500/30">
-                    <div className="text-center">
-                      <div className="text-3xl mb-2">🌥️</div>
-                      <p className="text-gray-400 text-sm font-semibold mb-3">
-                        Day After
-                      </p>
-                      <div className="space-y-2">
-                        <p className="text-blue-300 text-sm">Precipitation</p>
-                        <p className="text-2xl font-bold text-white">
-                          {weatherData.dayAfter.precipitation.toFixed(1)} mm
-                        </p>
-                        <p className="text-blue-400 text-xs">
-                          Chance: {weatherData.dayAfter.probability}%
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-gray-900/80 to-blue-950/40 p-6 rounded-2xl border border-blue-500/20">
-                  <h3 className="text-blue-400 font-bold text-lg mb-4 flex items-center space-x-2">
-                    <span>💡</span>
-                    <span>Smart Irrigation Tips</span>
-                  </h3>
-                  <ul className="space-y-2 text-gray-300 text-sm">
-                    <li className="flex items-start space-x-2">
-                      <span className="text-blue-500 mt-0.5">•</span>
-                      <span>
-                        Best time to irrigate: Early morning (6-8 AM) or evening
-                        (6-8 PM)
-                      </span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-blue-500 mt-0.5">•</span>
-                      <span>
-                        Drip irrigation saves 30-50% more water than sprinkler
-                        systems
-                      </span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-blue-500 mt-0.5">•</span>
-                      <span>
-                        Check soil moisture before irrigating - overwatering can
-                        harm crops
-                      </span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-blue-500 mt-0.5">•</span>
-                      <span>
-                        Consider mulching to retain soil moisture and reduce
-                        irrigation needs
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-              </motion.div>
-            )}
-
-            {!weatherData && !loadingWeather && (
-              <div className="text-center py-8">
-                <div className="text-6xl mb-4">🌦️</div>
-                <p className="text-gray-400 text-lg">
-                  Click the button above to get weather forecast and irrigation
-                  recommendations
-                </p>
-                <p className="text-gray-500 text-sm mt-2">
-                 {` We'll use your location to provide accurate local weather data`}
-                </p>
-              </div>
-            )}
-          </motion.section>
-
-          {/* Crop Recommendation System */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-emerald-950/40 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-emerald-500/20 mb-16"
-          >
-            <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-emerald-400 to-green-500 bg-clip-text mb-8 text-center">
-              🌱 Smart Crop Recommendations
-            </h2>
-
-            <div className="flex justify-center mb-8">
-              <button
-                onClick={fetchCropRecommendations}
-                disabled={loadingCrops}
-                className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 disabled:from-gray-700 disabled:to-gray-700 text-white rounded-xl font-semibold shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
-              >
-                {loadingCrops
-                  ? "⏳ Analyzing..."
-                  : "🌍 Get Crop Recommendations"}
-              </button>
-            </div>
-
-            {loadingCrops && (
-              <motion.div
-                animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-                className="flex flex-col items-center space-y-3"
-              >
-                <div className="w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></div>
-                <p className="text-emerald-400 font-medium">
-                  🌍 Analyzing soil, climate, and regional data...
-                </p>
-              </motion.div>
-            )}
-
-            {cropRecommendations && !loadingCrops && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="space-y-6"
-              >
-                {/* Location & Summary */}
-                <div className="text-center mb-6">
-                  <p className="text-gray-400 text-sm mb-1">
-                    Analysis Location
-                  </p>
-                  <p className="text-2xl font-bold text-white flex items-center justify-center space-x-2 mb-6">
-                    <span>📍</span>
-                    <span>{cropRecommendations.location}</span>
-                  </p>
-                </div>
-
-                {/* Environmental Conditions */}
-                <div className="grid md:grid-cols-2 gap-4 mb-6">
-                  {/* Climate Card */}
-                  <div className="bg-gradient-to-br from-orange-600/20 to-amber-600/20 p-6 rounded-xl border border-orange-500/30">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <span className="text-4xl">🌡️</span>
-                      <h3 className="text-orange-300 font-bold text-lg">
-                        Climate Data
-                      </h3>
-                    </div>
-                    <div className="space-y-2 text-gray-300">
-                      <p className="flex justify-between">
-                        <span>Current Temp:</span>
-                        <span className="font-semibold text-white">
-                          {cropRecommendations.climate.currentTemp}°C
-                        </span>
-                      </p>
-                      <p className="flex justify-between">
-                        <span>Avg Temp (14d):</span>
-                        <span className="font-semibold text-white">
-                          {cropRecommendations.climate.avgTemp}°C
-                        </span>
-                      </p>
-                      <p className="flex justify-between">
-                        <span>Total Rainfall:</span>
-                        <span className="font-semibold text-white">
-                          {cropRecommendations.climate.totalRainfall} mm
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Soil Card */}
-                  <div className="bg-gradient-to-br from-yellow-700/20 to-orange-700/20 p-6 rounded-xl border border-yellow-600/30">
-                    <div className="flex items-center space-x-3 mb-4">
-                      <span className="text-4xl">🏔️</span>
-                      <h3 className="text-yellow-300 font-bold text-lg">
-                        Soil Properties
-                      </h3>
-                    </div>
-                    <div className="space-y-2 text-gray-300">
-                      <p className="flex justify-between">
-                        <span>pH Level:</span>
-                        <span className="font-semibold text-white">
-                          {cropRecommendations.soil.ph.toFixed(1)}
-                        </span>
-                      </p>
-                      <p className="flex justify-between">
-                        <span>Organic Carbon:</span>
-                        <span className="font-semibold text-white">
-                          {cropRecommendations.soil.organicCarbon.toFixed(1)}%
-                        </span>
-                      </p>
-                      <p className="flex justify-between">
-                        <span>Clay Content:</span>
-                        <span className="font-semibold text-white">
-                          {cropRecommendations.soil.clay.toFixed(0)}%
-                        </span>
-                      </p>
-                      <p className="flex justify-between">
-                        <span>Sand Content:</span>
-                        <span className="font-semibold text-white">
-                          {cropRecommendations.soil.sand.toFixed(0)}%
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Soil Health Indicators */}
-                <div className="bg-gradient-to-br from-gray-900/80 to-emerald-950/40 p-6 rounded-2xl border border-emerald-500/20 mb-6">
-                  <h3 className="text-emerald-400 font-bold text-lg mb-4 flex items-center space-x-2">
-                    <span>📊</span>
-                    <span>Soil Health Assessment</span>
-                  </h3>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <p className="text-gray-400 text-sm mb-2">pH Status</p>
-                      <p
-                        className={`text-lg font-bold ${
-                          cropRecommendations.soil.ph < 6.5
-                            ? "text-orange-400"
-                            : cropRecommendations.soil.ph > 7.5
-                            ? "text-blue-400"
-                            : "text-green-400"
-                        }`}
-                      >
-                        {cropRecommendations.soil.ph < 6.5
-                          ? "Acidic"
+                  <div className="text-center">
+                    <p className="text-gray-400 text-sm mb-2">pH Status</p>
+                    <p
+                      className={`text-lg font-bold ${
+                        cropRecommendations.soil.ph < 6.5
+                          ? "text-orange-400"
                           : cropRecommendations.soil.ph > 7.5
-                          ? "Alkaline"
-                          : "Neutral"}
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-gray-400 text-sm mb-2">Fertility</p>
-                      <p
-                        className={`text-lg font-bold ${
-                          cropRecommendations.soil.organicCarbon > 2
-                            ? "text-green-400"
-                            : cropRecommendations.soil.organicCarbon > 1
-                            ? "text-yellow-400"
-                            : "text-orange-400"
-                        }`}
-                      >
-                        {cropRecommendations.soil.organicCarbon > 2
-                          ? "High"
+                          ? "text-blue-400"
+                          : "text-green-400"
+                      }`}
+                    >
+                      {cropRecommendations.soil.ph < 6.5
+                        ? "Acidic"
+                        : cropRecommendations.soil.ph > 7.5
+                        ? "Alkaline"
+                        : "Neutral"}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-gray-400 text-sm mb-2">Fertility</p>
+                    <p
+                      className={`text-lg font-bold ${
+                        cropRecommendations.soil.organicCarbon > 2
+                          ? "text-green-400"
                           : cropRecommendations.soil.organicCarbon > 1
-                          ? "Moderate"
-                          : "Low"}
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-gray-400 text-sm mb-2">Drainage</p>
-                      <p
-                        className={`text-lg font-bold ${
-                          cropRecommendations.soil.sand > 60
-                            ? "text-green-400"
-                            : cropRecommendations.soil.clay > 40
-                            ? "text-orange-400"
-                            : "text-yellow-400"
-                        }`}
-                      >
-                        {cropRecommendations.soil.sand > 60
-                          ? "Excellent"
+                          ? "text-yellow-400"
+                          : "text-orange-400"
+                      }`}
+                    >
+                      {cropRecommendations.soil.organicCarbon > 2
+                        ? "High"
+                        : cropRecommendations.soil.organicCarbon > 1
+                        ? "Moderate"
+                        : "Low"}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-gray-400 text-sm mb-2">Drainage</p>
+                    <p
+                      className={`text-lg font-bold ${
+                        cropRecommendations.soil.sand > 60
+                          ? "text-green-400"
                           : cropRecommendations.soil.clay > 40
-                          ? "Poor"
-                          : "Good"}
-                      </p>
-                    </div>
+                          ? "text-orange-400"
+                          : "text-yellow-400"
+                      }`}
+                    >
+                      {cropRecommendations.soil.sand > 60
+                        ? "Excellent"
+                        : cropRecommendations.soil.clay > 40
+                        ? "Poor"
+                        : "Good"}
+                    </p>
                   </div>
                 </div>
-
-                {/* Recommended Crops */}
-                <div>
-                  <h3 className="text-emerald-400 font-bold text-xl mb-4 flex items-center space-x-2">
-                    <span>🌾</span>
-                    <span>Recommended Crops for Your Region</span>
-                  </h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {cropRecommendations.recommendedCrops.map((crop, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.1, duration: 0.4 }}
-                        className={`p-5 rounded-xl border ${
-                          crop.suitability === "Excellent"
-                            ? "bg-gradient-to-br from-green-600/30 to-emerald-600/30 border-green-500/50"
-                            : crop.suitability === "Good"
-                            ? "bg-gradient-to-br from-blue-600/20 to-cyan-600/20 border-blue-500/40"
-                            : "bg-gradient-to-br from-yellow-600/20 to-orange-600/20 border-yellow-500/40"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center space-x-3">
-                            <span className="text-3xl">{crop.icon}</span>
-                            <h4 className="text-white font-bold text-lg">
-                              {crop.name}
-                            </h4>
-                          </div>
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              crop.suitability === "Excellent"
-                                ? "bg-green-500/30 text-green-300"
-                                : crop.suitability === "Good"
-                                ? "bg-blue-500/30 text-blue-300"
-                                : "bg-yellow-500/30 text-yellow-300"
-                            }`}
-                          >
-                            {crop.suitability}
-                          </span>
-                        </div>
-                        <p className="text-gray-300 text-sm mb-3 leading-relaxed">
-                          <span className="text-emerald-400 font-semibold">
-                            Why:{" "}
-                          </span>
-                          {crop.reason}
-                        </p>
-                        <p className="text-gray-400 text-xs">
-                          <span className="text-emerald-400 font-semibold">
-                            Tip:{" "}
-                          </span>
-                          {crop.requirements}
-                        </p>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Additional Tips */}
-                <div className="bg-gradient-to-br from-gray-900/80 to-emerald-950/40 p-6 rounded-2xl border border-emerald-500/20 mt-6">
-                  <h3 className="text-emerald-400 font-bold text-lg mb-4 flex items-center space-x-2">
-                    <span>💡</span>
-                    <span>Regional Farming Tips</span>
-                  </h3>
-                  <ul className="space-y-2 text-gray-300 text-sm">
-                    <li className="flex items-start space-x-2">
-                      <span className="text-emerald-500 mt-0.5">•</span>
-                      <span>
-                        Consider crop rotation to maintain soil health and
-                        reduce pest buildup
-                      </span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-emerald-500 mt-0.5">•</span>
-                      <span>
-                        Test soil annually for accurate nutrient management and
-                        pH adjustment
-                      </span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-emerald-500 mt-0.5">•</span>
-                      <span>
-                        Use organic matter and compost to improve soil structure
-                        and fertility
-                      </span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-emerald-500 mt-0.5">•</span>
-                      <span>
-                        Match planting dates with local climate patterns for
-                        optimal yields
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-              </motion.div>
-            )}
-
-            {!cropRecommendations && !loadingCrops && (
-              <div className="text-center py-8">
-                <div className="text-6xl mb-4">🌱</div>
-                <p className="text-gray-400 text-lg">
-                  Get personalized crop recommendations based on your location
-                </p>
-                <p className="text-gray-500 text-sm mt-2">
-             {` We'll analyze soil properties and climate data to suggest the
-                  best crops for your farm`}
-                </p>
               </div>
-            )}
-          </motion.section>
 
-          {/* Market Price Intelligence */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
-            className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-amber-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-amber-500/20 mb-16"
-          >
-            <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text mb-8 text-center">
-              💰 Market Price Intelligence
-            </h2>
-
-            <div className="flex justify-center mb-8">
-              <button
-                onClick={fetchMarketPrices}
-                disabled={loadingPrices}
-                className="px-8 py-4 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 disabled:from-gray-700 disabled:to-gray-700 text-white rounded-xl font-semibold shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
-              >
-                {loadingPrices
-                  ? "⏳ Fetching Prices..."
-                  : "📊 Get Latest Market Prices"}
-              </button>
-            </div>
-
-            {loadingPrices && (
-              <motion.div
-                animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-                className="flex flex-col items-center space-y-3"
-              >
-                <div className="w-12 h-12 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin"></div>
-                <p className="text-amber-400 font-medium">
-                  📈 Fetching real-time market prices...
-                </p>
-              </motion.div>
-            )}
-
-            {marketPrices && !loadingPrices && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="space-y-6"
-              >
-                <div className="text-center mb-6">
-                  <p className="text-gray-400 text-sm mb-1">Market Location</p>
-                  <p className="text-2xl font-bold text-white flex items-center justify-center space-x-2 mb-2">
-                    <span>🏪</span>
-                    <span>{marketPrices.market}</span>
-                  </p>
-                  <p className="text-amber-400 text-sm">
-                    Last Updated: {marketPrices.date}
-                  </p>
-                </div>
-
+              {/* Recommended Crops */}
+              <div>
+                <h3 className="text-emerald-400 font-bold text-xl mb-4 flex items-center space-x-2">
+                  <span>🌾</span>
+                  <span>Recommended Crops for Your Region</span>
+                </h3>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {marketPrices.commodities.map((item, i) => (
+                  {cropRecommendations.recommendedCrops.map((crop, i) => (
                     <motion.div
                       key={i}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.1, duration: 0.4 }}
                       className={`p-5 rounded-xl border ${
-                        item.trend === "up"
-                          ? "bg-gradient-to-br from-green-600/20 to-emerald-600/20 border-green-500/40"
-                          : item.trend === "down"
-                          ? "bg-gradient-to-br from-red-600/20 to-orange-600/20 border-red-500/40"
-                          : "bg-gradient-to-br from-gray-700/20 to-gray-600/20 border-gray-500/40"
+                        crop.suitability === "Excellent"
+                          ? "bg-gradient-to-br from-green-600/30 to-emerald-600/30 border-green-500/50"
+                          : crop.suitability === "Good"
+                          ? "bg-gradient-to-br from-blue-600/20 to-cyan-600/20 border-blue-500/40"
+                          : "bg-gradient-to-br from-yellow-600/20 to-orange-600/20 border-yellow-500/40"
                       }`}
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-3">
-                          <span className="text-3xl">{item.icon}</span>
+                          <span className="text-3xl">{crop.icon}</span>
                           <h4 className="text-white font-bold text-lg">
-                            {item.commodity}
+                            {crop.name}
                           </h4>
                         </div>
-                        <div
-                          className={`flex items-center space-x-1 text-sm font-semibold ${
-                            item.trend === "up"
-                              ? "text-green-400"
-                              : item.trend === "down"
-                              ? "text-red-400"
-                              : "text-gray-400"
-                          }`}
-                        >
-                          <span>
-                            {item.trend === "up"
-                              ? "↑"
-                              : item.trend === "down"
-                              ? "↓"
-                              : "→"}
-                          </span>
-                          <span>{Math.abs(item.changePercent)}%</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 mb-3">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-400">Modal Price:</span>
-                          <span className="text-white font-bold">
-                            ₹{item.modalPrice}/quintal
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-xs text-gray-500">
-                          <span>Min: ₹{item.minPrice}</span>
-                          <span>Max: ₹{item.maxPrice}</span>
-                        </div>
-                      </div>
-
-                      <div className="border-t border-gray-600/30 pt-3 space-y-2">
-                        <p className="text-xs">
-                          <span className="text-amber-400 font-semibold">
-                            Demand:{" "}
-                          </span>
-                          <span
-                            className={`font-semibold ${
-                              item.demand === "Very High"
-                                ? "text-green-400"
-                                : item.demand === "High"
-                                ? "text-blue-400"
-                                : item.demand === "Moderate"
-                                ? "text-yellow-400"
-                                : "text-gray-400"
-                            }`}
-                          >
-                            {item.demand}
-                          </span>
-                        </p>
-                        <p className="text-xs text-gray-300">
-                          <span className="text-amber-400 font-semibold">
-                            📋 Advice:{" "}
-                          </span>
-                          {item.advice}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-
-                <div className="bg-gradient-to-br from-gray-900/80 to-amber-950/40 p-6 rounded-2xl border border-amber-500/20 mt-6">
-                  <h3 className="text-amber-400 font-bold text-lg mb-4 flex items-center space-x-2">
-                    <span>💡</span>
-                    <span>Market Tips</span>
-                  </h3>
-                  <ul className="space-y-2 text-gray-300 text-sm">
-                    <li className="flex items-start space-x-2">
-                      <span className="text-amber-500 mt-0.5">•</span>
-                      <span>
-                        Sell when prices show upward trend (↑) and demand is
-                        high
-                      </span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-amber-500 mt-0.5">•</span>
-                      <span>
-                        Hold stock when prices are declining but expected to
-                        recover
-                      </span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-amber-500 mt-0.5">•</span>
-                      <span>
-                        Consider cold storage for perishables during low price
-                        periods
-                      </span>
-                    </li>
-                    <li className="flex items-start space-x-2">
-                      <span className="text-amber-500 mt-0.5">•</span>
-                      <span>
-                        Monitor prices for 3-5 days before making bulk selling
-                        decisions
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-              </motion.div>
-            )}
-
-            {!marketPrices && !loadingPrices && (
-              <div className="text-center py-8">
-                <div className="text-6xl mb-4">💰</div>
-                <p className="text-gray-400 text-lg">
-                  Get real-time market prices from your local mandi
-                </p>
-                <p className="text-gray-500 text-sm mt-2">
-                  Make informed selling decisions based on current market trends
-                </p>
-              </div>
-            )}
-          </motion.section>
-
-          {/* Fertilizer Recommendation Engine */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7, duration: 0.6 }}
-            className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-purple-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-purple-500/20 mb-16"
-          >
-            <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text mb-8 text-center">
-              🧪 Fertilizer Recommendation
-            </h2>
-
-            <div className="flex flex-col items-center space-y-4 mb-8">
-              <div className="w-full max-w-md">
-                <label className="text-gray-300 text-sm mb-2 block">
-                  Select Your Crop
-                </label>
-                <select
-                  value={selectedCrop}
-                  onChange={(e) => setSelectedCrop(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-800 border border-purple-500/30 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
-                >
-                  <option value="">-- Choose Crop --</option>
-                  <option value="Wheat">🌾 Wheat</option>
-                  <option value="Rice">🌾 Rice</option>
-                  <option value="Potato">🥔 Potato</option>
-                  <option value="Tomato">🍅 Tomato</option>
-                  <option value="Sugarcane">🎋 Sugarcane</option>
-                  <option value="Corn">🌽 Corn/Maize</option>
-                </select>
-              </div>
-
-              <button
-                onClick={calculateFertilizer}
-                disabled={!selectedCrop}
-                className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-gray-700 disabled:to-gray-700 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
-              >
-                🧮 Calculate Fertilizer Plan
-              </button>
-            </div>
-
-            {fertilizerPlan && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="space-y-6"
-              >
-                <div className="text-center mb-6">
-                  <p className="text-gray-400 text-sm mb-2">
-                    Fertilizer Plan For
-                  </p>
-                  <p className="text-3xl font-bold text-white flex items-center justify-center space-x-2">
-                    <span>{fertilizerPlan.icon}</span>
-                    <span>{fertilizerPlan.crop}</span>
-                  </p>
-                  <p className="text-purple-400 text-lg mt-2">
-                    NPK Ratio: {fertilizerPlan.npk} kg/acre
-                  </p>
-                </div>
-
-                <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 p-6 rounded-xl border border-purple-500/40 mb-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-purple-300 font-bold text-lg">
-                      Estimated Cost
-                    </h3>
-                    <p className="text-3xl font-black text-white">
-                      ₹{fertilizerPlan.totalCostPerAcre}/acre
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-purple-400 font-bold text-xl mb-4 flex items-center space-x-2">
-                    <span>📅</span>
-                    <span>Application Schedule</span>
-                  </h3>
-
-                  {fertilizerPlan.stages.map((stage, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.1, duration: 0.4 }}
-                      className="bg-gradient-to-br from-gray-800/80 to-purple-900/40 p-5 rounded-xl border border-purple-500/30"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-white font-bold">{stage.stage}</h4>
-                        <span className="text-purple-400 text-sm font-semibold">
-                          {stage.timing}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-4 mb-3">
-                        <div className="text-center">
-                          <p className="text-green-400 text-xs mb-1">
-                            Nitrogen (N)
-                          </p>
-                          <p className="text-white font-bold">{stage.n} kg</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-blue-400 text-xs mb-1">
-                            Phosphorus (P)
-                          </p>
-                          <p className="text-white font-bold">{stage.p} kg</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-orange-400 text-xs mb-1">
-                            Potassium (K)
-                          </p>
-                          <p className="text-white font-bold">{stage.k} kg</p>
-                        </div>
-                      </div>
-
-                      <p className="text-gray-300 text-sm">
-                        <span className="text-purple-400 font-semibold">
-                          Products:{" "}
-                        </span>
-                        {stage.products}
-                      </p>
-                    </motion.div>
-                  ))}
-                </div>
-
-                <div className="bg-gradient-to-br from-gray-900/80 to-purple-950/40 p-6 rounded-2xl border border-purple-500/20 mt-6">
-                  <h3 className="text-purple-400 font-bold text-lg mb-4 flex items-center space-x-2">
-                    <span>💡</span>
-                    <span>Expert Tips</span>
-                  </h3>
-                  <ul className="space-y-2 text-gray-300 text-sm">
-                    {fertilizerPlan.additionalTips.map((tip, i) => (
-                      <li key={i} className="flex items-start space-x-2">
-                        <span className="text-purple-500 mt-0.5">•</span>
-                        <span>{tip}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="bg-gradient-to-br from-yellow-900/20 to-orange-900/20 p-5 rounded-xl border border-yellow-600/30">
-                  <p className="text-yellow-300 text-sm">
-                    <span className="font-bold">⚠️ Important: </span>
-                    These are general recommendations. Always conduct soil
-                    testing for precise nutrient requirements and adjust doses
-                    accordingly.
-                  </p>
-                </div>
-              </motion.div>
-            )}
-
-            {!fertilizerPlan && (
-              <div className="text-center py-8">
-                <div className="text-6xl mb-4">🧪</div>
-                <p className="text-gray-400 text-lg">
-                  Select a crop above to get customized fertilizer
-                  recommendations
-                </p>
-                <p className="text-gray-500 text-sm mt-2">
-                  Get NPK ratios, application schedule, and cost estimates
-                </p>
-              </div>
-            )}
-          </motion.section>
-
-        
-          {/*SOIL INSTINGS */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-green-950/50 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-green-500/20"
-          >
-            <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text mb-8 text-center">
-              🌍 Soil Intelligence
-            </h2>
-
-            <div className="flex justify-center mb-8">
-              <button
-                onClick={fetchSoilInfo}
-                disabled={loadingSoil}
-                className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:from-gray-700 disabled:to-gray-700 text-white rounded-xl font-semibold shadow-lg shadow-green-500/30 hover:shadow-green-500/50 transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
-              >
-                {loadingSoil ? "⏳ Analyzing..." : "🔄 Analyze Soil Data"}
-              </button>
-            </div>
-
-            {loadingSoil && (
-              <motion.div
-                animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-                className="flex flex-col items-center space-y-3"
-              >
-                <div className="w-12 h-12 border-4 border-green-500/30 border-t-green-500 rounded-full animate-spin"></div>
-                <p className="text-green-400 font-medium">
-                  🌾 Fetching soil insights...
-                </p>
-              </motion.div>
-            )}
-
-            {soilInfo && !loadingSoil && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5 }}
-                className="space-y-6"
-              >
-                <div className="grid md:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 p-5 rounded-xl border border-blue-500/30">
-                    <div className="text-3xl mb-2">💧</div>
-                    <p className="text-gray-400 text-sm">Soil Moisture</p>
-                    <p className="text-2xl font-bold text-white">
-                      {soilInfo.soilData.soilMoisture}%
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-orange-600/20 to-red-600/20 p-5 rounded-xl border border-orange-500/30">
-                    <div className="text-3xl mb-2">🌡️</div>
-                    <p className="text-gray-400 text-sm">Temperature</p>
-                    <p className="text-2xl font-bold text-white">
-                      {soilInfo.soilData.temperature}°C
-                    </p>
-                  </div>
-                  <div className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 p-5 rounded-xl border border-purple-500/30">
-                    <div className="text-3xl mb-2">☁️</div>
-                    <p className="text-gray-400 text-sm">Humidity</p>
-                    <p className="text-2xl font-bold text-white">
-                      {soilInfo.soilData.humidity}%
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-gray-900/80 to-green-950/40 p-6 rounded-2xl border border-green-500/20">
-                  <h3 className="text-green-400 font-bold text-xl mb-4 flex items-center space-x-2">
-                    <span>✨</span>
-                    <span>Recommendations</span>
-                  </h3>
-                  <ul className="space-y-3">
-                    {soilInfo.recommendations.map((rec, i) => (
-                      <motion.li
-                        key={i}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1, duration: 0.4 }}
-                        className="flex items-start space-x-3 text-gray-300"
-                      >
-                        <span className="text-green-500 text-xl mt-0.5">✓</span>
-                        <span className="leading-relaxed">{rec}</span>
-                      </motion.li>
-                    ))}
-                  </ul>
-                </div>
-              </motion.div>
-            )}
-
-            {!soilInfo && !loadingSoil && (
-              <div className="text-center py-8">
-                <div className="text-6xl mb-4">🌱</div>
-                <p className="text-gray-400 text-lg">
-                  Click the button above to analyze your soil data
-                </p>
-              </div>
-            )}
-          </motion.section>
-        </div>
-        {/*smart alers */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-          className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-red-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-red-500/20 mb-16"
-        >
-          <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text mb-8 text-center">
-            ⚡ Weather Smart Alerts
-          </h2>
-
-          <div className="flex justify-center mb-8">
-            <button
-              onClick={checkWeatherAlerts}
-              className="px-8 py-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white rounded-xl font-semibold shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all duration-300 hover:scale-105"
-            >
-              🔔 Check Weather Alerts
-            </button>
-          </div>
-
-          {weatherAlerts.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="space-y-4"
-            >
-              {weatherAlerts.map((alert, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className={`p-5 rounded-xl border ${
-                    alert.type === "danger"
-                      ? "bg-red-600/20 border-red-500/50"
-                      : alert.type === "warning"
-                      ? "bg-orange-600/20 border-orange-500/50"
-                      : alert.type === "success"
-                      ? "bg-green-600/20 border-green-500/50"
-                      : "bg-blue-600/20 border-blue-500/50"
-                  }`}
-                >
-                  <div className="flex items-start space-x-4">
-                    <span className="text-4xl">{alert.icon}</span>
-                    <div className="flex-1">
-                      <h3 className="text-white font-bold text-lg mb-2">
-                        {alert.title}
-                      </h3>
-                      <p className="text-gray-300 text-sm mb-3">
-                        {alert.message}
-                      </p>
-                      <div className="flex items-center justify-between">
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            alert.priority === "high"
-                              ? "bg-red-500/30 text-red-300"
-                              : alert.priority === "medium"
-                              ? "bg-yellow-500/30 text-yellow-300"
-                              : "bg-gray-500/30 text-gray-300"
+                            crop.suitability === "Excellent"
+                              ? "bg-green-500/30 text-green-300"
+                              : crop.suitability === "Good"
+                              ? "bg-blue-500/30 text-blue-300"
+                              : "bg-yellow-500/30 text-yellow-300"
                           }`}
                         >
-                          {alert.priority.toUpperCase()} PRIORITY
-                        </span>
-                        <span className="text-gray-400 text-xs">
-                          Action: {alert.action}
+                          {crop.suitability}
                         </span>
                       </div>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </motion.section>
-
-        {/* Crop Rotation Planner */}
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.0, duration: 0.6 }}
-          className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-teal-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-teal-500/20 mb-16"
-        >
-          <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-teal-400 to-green-500 bg-clip-text mb-8 text-center">
-            🔄 Crop Rotation Planner
-          </h2>
-
-          <div className="max-w-md mx-auto mb-8">
-            <select
-              onChange={(e) =>
-                e.target.value && generateRotationPlan(e.target.value)
-              }
-              className="w-full px-4 py-3 bg-gray-800 border border-teal-500/30 rounded-xl text-white focus:outline-none focus:border-teal-500"
-            >
-              <option value="">-- Select Your Main Crop --</option>
-              <option value="Wheat">🌾 Wheat</option>
-              <option value="Rice">🌾 Rice</option>
-              <option value="Potato">🥔 Potato</option>
-              <option value="Cotton">🌸 Cotton</option>
-            </select>
-          </div>
-
-          {rotationPlan && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="space-y-6"
-            >
-              <div className="grid md:grid-cols-4 gap-4">
-                {[
-                  rotationPlan.year1,
-                  rotationPlan.year2,
-                  rotationPlan.year3,
-                  rotationPlan.year4,
-                ].map((year, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="bg-gradient-to-br from-teal-600/20 to-green-600/20 p-5 rounded-xl border border-teal-500/40 text-center"
-                  >
-                    <p className="text-teal-400 text-sm font-semibold mb-2">
-                      Year {i + 1}
-                    </p>
-                    <div className="text-4xl mb-2">{year.icon}</div>
-                    <h4 className="text-white font-bold mb-2">{year.crop}</h4>
-                    <p className="text-gray-400 text-xs mb-2">{year.season}</p>
-                    <p className="text-gray-300 text-xs">{year.benefit}</p>
-                  </motion.div>
-                ))}
-              </div>
-
-              <div className="bg-gradient-to-br from-gray-900/80 to-teal-950/40 p-6 rounded-2xl border border-teal-500/20">
-                <h3 className="text-teal-400 font-bold text-lg mb-4 flex items-center space-x-2">
-                  <span>✨</span>
-                  <span>Benefits of This Rotation</span>
-                </h3>
-                <ul className="space-y-2">
-                  {rotationPlan.benefits.map((benefit, i) => (
-                    <li
-                      key={i}
-                      className="flex items-start space-x-2 text-gray-300 text-sm"
-                    >
-                      <span className="text-teal-500 mt-0.5">✓</span>
-                      <span>{benefit}</span>
-                    </li>
+                      <p className="text-gray-300 text-sm mb-3 leading-relaxed">
+                        <span className="text-emerald-400 font-semibold">
+                          Why:{" "}
+                        </span>
+                        {crop.reason}
+                      </p>
+                      <p className="text-gray-400 text-xs">
+                        <span className="text-emerald-400 font-semibold">
+                          Tip:{" "}
+                        </span>
+                        {crop.requirements}
+                      </p>
+                    </motion.div>
                   ))}
-                </ul>
+                </div>
               </div>
 
-              <div className="bg-gradient-to-br from-gray-900/80 to-teal-950/40 p-6 rounded-2xl border border-teal-500/20">
-                <h3 className="text-teal-400 font-bold text-lg mb-4 flex items-center space-x-2">
+              {/* Additional Tips */}
+              <div className="bg-gradient-to-br from-gray-900/80 to-emerald-950/40 p-6 rounded-2xl border border-emerald-500/20 mt-6">
+                <h3 className="text-emerald-400 font-bold text-lg mb-4 flex items-center space-x-2">
                   <span>💡</span>
-                  <span>Expert Tips</span>
+                  <span>Regional Farming Tips</span>
                 </h3>
-                <ul className="space-y-2">
-                  {rotationPlan.tips.map((tip, i) => (
-                    <li
-                      key={i}
-                      className="flex items-start space-x-2 text-gray-300 text-sm"
-                    >
-                      <span className="text-teal-500 mt-0.5">•</span>
-                      <span>{tip}</span>
-                    </li>
-                  ))}
+                <ul className="space-y-2 text-gray-300 text-sm">
+                  <li className="flex items-start space-x-2">
+                    <span className="text-emerald-500 mt-0.5">•</span>
+                    <span>
+                      Consider crop rotation to maintain soil health and reduce
+                      pest buildup
+                    </span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-emerald-500 mt-0.5">•</span>
+                    <span>
+                      Test soil annually for accurate nutrient management and pH
+                      adjustment
+                    </span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-emerald-500 mt-0.5">•</span>
+                    <span>
+                      Use organic matter and compost to improve soil structure
+                      and fertility
+                    </span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-emerald-500 mt-0.5">•</span>
+                    <span>
+                      Match planting dates with local climate patterns for
+                      optimal yields
+                    </span>
+                  </li>
                 </ul>
               </div>
             </motion.div>
           )}
 
-          {!rotationPlan && (
+          {!cropRecommendations && !loadingCrops && (
             <div className="text-center py-8">
-              <div className="text-6xl mb-4">🔄</div>
+              <div className="text-6xl mb-4">🌱</div>
               <p className="text-gray-400 text-lg">
-                Select your main crop to generate a 4-year rotation plan
+                Get personalized crop recommendations based on your location
+              </p>
+              <p className="text-gray-500 text-sm mt-2">
+                {` We'll analyze soil properties and climate data to suggest the
+                  best crops for your farm`}
               </p>
             </div>
           )}
         </motion.section>
 
-        {/* Community Knowledge Base */}
+        {/* Market Price Intelligence */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.1, duration: 0.6 }}
-          className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-indigo-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-indigo-500/20 mb-16"
+          transition={{ delay: 0.6, duration: 0.6 }}
+          className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-amber-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-amber-500/20 mb-16"
         >
-          <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text mb-8 text-center">
-            👥 Community Knowledge Base
+          <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-amber-400 to-yellow-500 bg-clip-text mb-8 text-center">
+            💰 Market Price Intelligence
           </h2>
 
-          <div className="mb-8">
-            <input
-              type="text"
-              value={knowledgeSearch}
-              onChange={(e) => setKnowledgeSearch(e.target.value)}
-              placeholder="🔍 Search farming tips..."
-              className="w-full px-4 py-3 bg-gray-800 border border-indigo-500/30 rounded-xl text-white focus:outline-none focus:border-indigo-500"
-            />
+          <div className="flex justify-center mb-8">
+            <button
+              onClick={fetchMarketPrices}
+              disabled={loadingPrices}
+              className="px-8 py-4 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 disabled:from-gray-700 disabled:to-gray-700 text-white rounded-xl font-semibold shadow-lg shadow-amber-500/30 hover:shadow-amber-500/50 transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+            >
+              {loadingPrices
+                ? "⏳ Fetching Prices..."
+                : "📊 Get Latest Market Prices"}
+            </button>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
-            {filteredKnowledge.map((item, i) => (
+          {loadingPrices && (
+            <motion.div
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="flex flex-col items-center space-y-3"
+            >
+              <div className="w-12 h-12 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin"></div>
+              <p className="text-amber-400 font-medium">
+                📈 Fetching real-time market prices...
+              </p>
+            </motion.div>
+          )}
+
+          {marketPrices && !loadingPrices && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="space-y-6"
+            >
+              <div className="text-center mb-6">
+                <p className="text-gray-400 text-sm mb-1">Market Location</p>
+                <p className="text-2xl font-bold text-white flex items-center justify-center space-x-2 mb-2">
+                  <span>🏪</span>
+                  <span>{marketPrices.market}</span>
+                </p>
+                <p className="text-amber-400 text-sm">
+                  Last Updated: {marketPrices.date}
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                {marketPrices.commodities.map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1, duration: 0.4 }}
+                    className={`p-5 rounded-xl border ${
+                      item.trend === "up"
+                        ? "bg-gradient-to-br from-green-600/20 to-emerald-600/20 border-green-500/40"
+                        : item.trend === "down"
+                        ? "bg-gradient-to-br from-red-600/20 to-orange-600/20 border-red-500/40"
+                        : "bg-gradient-to-br from-gray-700/20 to-gray-600/20 border-gray-500/40"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-3xl">{item.icon}</span>
+                        <h4 className="text-white font-bold text-lg">
+                          {item.commodity}
+                        </h4>
+                      </div>
+                      <div
+                        className={`flex items-center space-x-1 text-sm font-semibold ${
+                          item.trend === "up"
+                            ? "text-green-400"
+                            : item.trend === "down"
+                            ? "text-red-400"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        <span>
+                          {item.trend === "up"
+                            ? "↑"
+                            : item.trend === "down"
+                            ? "↓"
+                            : "→"}
+                        </span>
+                        <span>{Math.abs(item.changePercent)}%</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 mb-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Modal Price:</span>
+                        <span className="text-white font-bold">
+                          ₹{item.modalPrice}/quintal
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>Min: ₹{item.minPrice}</span>
+                        <span>Max: ₹{item.maxPrice}</span>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-gray-600/30 pt-3 space-y-2">
+                      <p className="text-xs">
+                        <span className="text-amber-400 font-semibold">
+                          Demand:{" "}
+                        </span>
+                        <span
+                          className={`font-semibold ${
+                            item.demand === "Very High"
+                              ? "text-green-400"
+                              : item.demand === "High"
+                              ? "text-blue-400"
+                              : item.demand === "Moderate"
+                              ? "text-yellow-400"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          {item.demand}
+                        </span>
+                      </p>
+                      <p className="text-xs text-gray-300">
+                        <span className="text-amber-400 font-semibold">
+                          📋 Advice:{" "}
+                        </span>
+                        {item.advice}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="bg-gradient-to-br from-gray-900/80 to-amber-950/40 p-6 rounded-2xl border border-amber-500/20 mt-6">
+                <h3 className="text-amber-400 font-bold text-lg mb-4 flex items-center space-x-2">
+                  <span>💡</span>
+                  <span>Market Tips</span>
+                </h3>
+                <ul className="space-y-2 text-gray-300 text-sm">
+                  <li className="flex items-start space-x-2">
+                    <span className="text-amber-500 mt-0.5">•</span>
+                    <span>
+                      Sell when prices show upward trend (↑) and demand is high
+                    </span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-amber-500 mt-0.5">•</span>
+                    <span>
+                      Hold stock when prices are declining but expected to
+                      recover
+                    </span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-amber-500 mt-0.5">•</span>
+                    <span>
+                      Consider cold storage for perishables during low price
+                      periods
+                    </span>
+                  </li>
+                  <li className="flex items-start space-x-2">
+                    <span className="text-amber-500 mt-0.5">•</span>
+                    <span>
+                      Monitor prices for 3-5 days before making bulk selling
+                      decisions
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </motion.div>
+          )}
+
+          {!marketPrices && !loadingPrices && (
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">💰</div>
+              <p className="text-gray-400 text-lg">
+                Get real-time market prices from your local mandi
+              </p>
+              <p className="text-gray-500 text-sm mt-2">
+                Make informed selling decisions based on current market trends
+              </p>
+            </div>
+          )}
+        </motion.section>
+
+        {/* Fertilizer Recommendation Engine */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.6 }}
+          className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-purple-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-purple-500/20 mb-16"
+        >
+          <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text mb-8 text-center">
+            🧪 Fertilizer Recommendation
+          </h2>
+
+          <div className="flex flex-col items-center space-y-4 mb-8">
+            <div className="w-full max-w-md">
+              <label className="text-gray-300 text-sm mb-2 block">
+                Select Your Crop
+              </label>
+              <select
+                value={selectedCrop}
+                onChange={(e) => setSelectedCrop(e.target.value)}
+                className="w-full px-4 py-3 bg-gray-800 border border-purple-500/30 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+              >
+                <option value="">-- Choose Crop --</option>
+                <option value="Wheat">🌾 Wheat</option>
+                <option value="Rice">🌾 Rice</option>
+                <option value="Potato">🥔 Potato</option>
+                <option value="Tomato">🍅 Tomato</option>
+                <option value="Sugarcane">🎋 Sugarcane</option>
+                <option value="Corn">🌽 Corn/Maize</option>
+              </select>
+            </div>
+
+            <button
+              onClick={calculateFertilizer}
+              disabled={!selectedCrop}
+              className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-gray-700 disabled:to-gray-700 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+            >
+              🧮 Calculate Fertilizer Plan
+            </button>
+          </div>
+
+          {fertilizerPlan && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="space-y-6"
+            >
+              <div className="text-center mb-6">
+                <p className="text-gray-400 text-sm mb-2">
+                  Fertilizer Plan For
+                </p>
+                <p className="text-3xl font-bold text-white flex items-center justify-center space-x-2">
+                  <span>{fertilizerPlan.icon}</span>
+                  <span>{fertilizerPlan.crop}</span>
+                </p>
+                <p className="text-purple-400 text-lg mt-2">
+                  NPK Ratio: {fertilizerPlan.npk} kg/acre
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 p-6 rounded-xl border border-purple-500/40 mb-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-purple-300 font-bold text-lg">
+                    Estimated Cost
+                  </h3>
+                  <p className="text-3xl font-black text-white">
+                    ₹{fertilizerPlan.totalCostPerAcre}/acre
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-purple-400 font-bold text-xl mb-4 flex items-center space-x-2">
+                  <span>📅</span>
+                  <span>Application Schedule</span>
+                </h3>
+
+                {fertilizerPlan.stages.map((stage, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1, duration: 0.4 }}
+                    className="bg-gradient-to-br from-gray-800/80 to-purple-900/40 p-5 rounded-xl border border-purple-500/30"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-white font-bold">{stage.stage}</h4>
+                      <span className="text-purple-400 text-sm font-semibold">
+                        {stage.timing}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4 mb-3">
+                      <div className="text-center">
+                        <p className="text-green-400 text-xs mb-1">
+                          Nitrogen (N)
+                        </p>
+                        <p className="text-white font-bold">{stage.n} kg</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-blue-400 text-xs mb-1">
+                          Phosphorus (P)
+                        </p>
+                        <p className="text-white font-bold">{stage.p} kg</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-orange-400 text-xs mb-1">
+                          Potassium (K)
+                        </p>
+                        <p className="text-white font-bold">{stage.k} kg</p>
+                      </div>
+                    </div>
+
+                    <p className="text-gray-300 text-sm">
+                      <span className="text-purple-400 font-semibold">
+                        Products:{" "}
+                      </span>
+                      {stage.products}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="bg-gradient-to-br from-gray-900/80 to-purple-950/40 p-6 rounded-2xl border border-purple-500/20 mt-6">
+                <h3 className="text-purple-400 font-bold text-lg mb-4 flex items-center space-x-2">
+                  <span>💡</span>
+                  <span>Expert Tips</span>
+                </h3>
+                <ul className="space-y-2 text-gray-300 text-sm">
+                  {fertilizerPlan.additionalTips.map((tip, i) => (
+                    <li key={i} className="flex items-start space-x-2">
+                      <span className="text-purple-500 mt-0.5">•</span>
+                      <span>{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="bg-gradient-to-br from-yellow-900/20 to-orange-900/20 p-5 rounded-xl border border-yellow-600/30">
+                <p className="text-yellow-300 text-sm">
+                  <span className="font-bold">⚠️ Important: </span>
+                  These are general recommendations. Always conduct soil testing
+                  for precise nutrient requirements and adjust doses
+                  accordingly.
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {!fertilizerPlan && (
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">🧪</div>
+              <p className="text-gray-400 text-lg">
+                Select a crop above to get customized fertilizer recommendations
+              </p>
+              <p className="text-gray-500 text-sm mt-2">
+                Get NPK ratios, application schedule, and cost estimates
+              </p>
+            </div>
+          )}
+        </motion.section>
+
+        {/*SOIL INSTINGS */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.6 }}
+          className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-green-950/50 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-green-500/20"
+        >
+          <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text mb-8 text-center">
+            🌍 Soil Intelligence
+          </h2>
+
+          <div className="flex justify-center mb-8">
+            <button
+              onClick={fetchSoilInfo}
+              disabled={loadingSoil}
+              className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 disabled:from-gray-700 disabled:to-gray-700 text-white rounded-xl font-semibold shadow-lg shadow-green-500/30 hover:shadow-green-500/50 transition-all duration-300 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+            >
+              {loadingSoil ? "⏳ Analyzing..." : "🔄 Analyze Soil Data"}
+            </button>
+          </div>
+
+          {loadingSoil && (
+            <motion.div
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="flex flex-col items-center space-y-3"
+            >
+              <div className="w-12 h-12 border-4 border-green-500/30 border-t-green-500 rounded-full animate-spin"></div>
+              <p className="text-green-400 font-medium">
+                🌾 Fetching soil insights...
+              </p>
+            </motion.div>
+          )}
+
+          {soilInfo && !loadingSoil && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="space-y-6"
+            >
+              <div className="grid md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-gradient-to-br from-blue-600/20 to-cyan-600/20 p-5 rounded-xl border border-blue-500/30">
+                  <div className="text-3xl mb-2">💧</div>
+                  <p className="text-gray-400 text-sm">Soil Moisture</p>
+                  <p className="text-2xl font-bold text-white">
+                    {soilInfo.soilData.soilMoisture}%
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-orange-600/20 to-red-600/20 p-5 rounded-xl border border-orange-500/30">
+                  <div className="text-3xl mb-2">🌡️</div>
+                  <p className="text-gray-400 text-sm">Temperature</p>
+                  <p className="text-2xl font-bold text-white">
+                    {soilInfo.soilData.temperature}°C
+                  </p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-600/20 to-indigo-600/20 p-5 rounded-xl border border-purple-500/30">
+                  <div className="text-3xl mb-2">☁️</div>
+                  <p className="text-gray-400 text-sm">Humidity</p>
+                  <p className="text-2xl font-bold text-white">
+                    {soilInfo.soilData.humidity}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-gray-900/80 to-green-950/40 p-6 rounded-2xl border border-green-500/20">
+                <h3 className="text-green-400 font-bold text-xl mb-4 flex items-center space-x-2">
+                  <span>✨</span>
+                  <span>Recommendations</span>
+                </h3>
+                <ul className="space-y-3">
+                  {soilInfo.recommendations.map((rec, i) => (
+                    <motion.li
+                      key={i}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1, duration: 0.4 }}
+                      className="flex items-start space-x-3 text-gray-300"
+                    >
+                      <span className="text-green-500 text-xl mt-0.5">✓</span>
+                      <span className="leading-relaxed">{rec}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </div>
+            </motion.div>
+          )}
+
+          {!soilInfo && !loadingSoil && (
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">🌱</div>
+              <p className="text-gray-400 text-lg">
+                Click the button above to analyze your soil data
+              </p>
+            </div>
+          )}
+        </motion.section>
+      </div>
+      {/*smart alers */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8, duration: 0.6 }}
+        className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-red-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-red-500/20 mb-16"
+      >
+        <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-red-400 to-orange-500 bg-clip-text mb-8 text-center">
+          ⚡ Weather Smart Alerts
+        </h2>
+
+        <div className="flex justify-center mb-8">
+          <button
+            onClick={checkWeatherAlerts}
+            className="px-8 py-4 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white rounded-xl font-semibold shadow-lg shadow-red-500/30 hover:shadow-red-500/50 transition-all duration-300 hover:scale-105"
+          >
+            🔔 Check Weather Alerts
+          </button>
+        </div>
+
+        {weatherAlerts.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-4"
+          >
+            {weatherAlerts.map((alert, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="bg-gradient-to-br from-indigo-600/10 to-purple-600/10 p-5 rounded-xl border border-indigo-500/30 hover:border-indigo-500/50 transition-all"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className={`p-5 rounded-xl border ${
+                  alert.type === "danger"
+                    ? "bg-red-600/20 border-red-500/50"
+                    : alert.type === "warning"
+                    ? "bg-orange-600/20 border-orange-500/50"
+                    : alert.type === "success"
+                    ? "bg-green-600/20 border-green-500/50"
+                    : "bg-blue-600/20 border-blue-500/50"
+                }`}
               >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-2xl">{item.icon}</span>
-                    <span className="text-indigo-400 text-xs font-semibold">
-                      {item.category}
-                    </span>
+                <div className="flex items-start space-x-4">
+                  <span className="text-4xl">{alert.icon}</span>
+                  <div className="flex-1">
+                    <h3 className="text-white font-bold text-lg mb-2">
+                      {alert.title}
+                    </h3>
+                    <p className="text-gray-300 text-sm mb-3">
+                      {alert.message}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          alert.priority === "high"
+                            ? "bg-red-500/30 text-red-300"
+                            : alert.priority === "medium"
+                            ? "bg-yellow-500/30 text-yellow-300"
+                            : "bg-gray-500/30 text-gray-300"
+                        }`}
+                      >
+                        {alert.priority.toUpperCase()} PRIORITY
+                      </span>
+                      <span className="text-gray-400 text-xs">
+                        Action: {alert.action}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-1 text-gray-400 text-xs">
-                    <span>❤️</span>
-                    <span>{item.likes}</span>
-                  </div>
-                </div>
-                <h4 className="text-white font-bold mb-2">{item.title}</h4>
-                <p className="text-gray-300 text-sm mb-3 leading-relaxed">
-                  {item.content}
-                </p>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-indigo-400">{item.author}</span>
-                  <span className="text-gray-500">{item.region}</span>
                 </div>
               </motion.div>
             ))}
+          </motion.div>
+        )}
+      </motion.section>
+
+      {/* Crop Rotation Planner */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.0, duration: 0.6 }}
+        className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-teal-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-teal-500/20 mb-16"
+      >
+        <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-teal-400 to-green-500 bg-clip-text mb-8 text-center">
+          🔄 Crop Rotation Planner
+        </h2>
+
+        <div className="max-w-md mx-auto mb-8">
+          <select
+            onChange={(e) =>
+              e.target.value && generateRotationPlan(e.target.value)
+            }
+            className="w-full px-4 py-3 bg-gray-800 border border-teal-500/30 rounded-xl text-white focus:outline-none focus:border-teal-500"
+          >
+            <option value="">-- Select Your Main Crop --</option>
+            <option value="Wheat">🌾 Wheat</option>
+            <option value="Rice">🌾 Rice</option>
+            <option value="Potato">🥔 Potato</option>
+            <option value="Cotton">🌸 Cotton</option>
+          </select>
+        </div>
+
+        {rotationPlan && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-6"
+          >
+            <div className="grid md:grid-cols-4 gap-4">
+              {[
+                rotationPlan.year1,
+                rotationPlan.year2,
+                rotationPlan.year3,
+                rotationPlan.year4,
+              ].map((year, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="bg-gradient-to-br from-teal-600/20 to-green-600/20 p-5 rounded-xl border border-teal-500/40 text-center"
+                >
+                  <p className="text-teal-400 text-sm font-semibold mb-2">
+                    Year {i + 1}
+                  </p>
+                  <div className="text-4xl mb-2">{year.icon}</div>
+                  <h4 className="text-white font-bold mb-2">{year.crop}</h4>
+                  <p className="text-gray-400 text-xs mb-2">{year.season}</p>
+                  <p className="text-gray-300 text-xs">{year.benefit}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="bg-gradient-to-br from-gray-900/80 to-teal-950/40 p-6 rounded-2xl border border-teal-500/20">
+              <h3 className="text-teal-400 font-bold text-lg mb-4 flex items-center space-x-2">
+                <span>✨</span>
+                <span>Benefits of This Rotation</span>
+              </h3>
+              <ul className="space-y-2">
+                {rotationPlan.benefits.map((benefit, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start space-x-2 text-gray-300 text-sm"
+                  >
+                    <span className="text-teal-500 mt-0.5">✓</span>
+                    <span>{benefit}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="bg-gradient-to-br from-gray-900/80 to-teal-950/40 p-6 rounded-2xl border border-teal-500/20">
+              <h3 className="text-teal-400 font-bold text-lg mb-4 flex items-center space-x-2">
+                <span>💡</span>
+                <span>Expert Tips</span>
+              </h3>
+              <ul className="space-y-2">
+                {rotationPlan.tips.map((tip, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start space-x-2 text-gray-300 text-sm"
+                  >
+                    <span className="text-teal-500 mt-0.5">•</span>
+                    <span>{tip}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+        )}
+
+        {!rotationPlan && (
+          <div className="text-center py-8">
+            <div className="text-6xl mb-4">🔄</div>
+            <p className="text-gray-400 text-lg">
+              Select your main crop to generate a 4-year rotation plan
+            </p>
           </div>
-        </motion.section>
-      </main>
+        )}
+      </motion.section>
+
+      {/* Community Knowledge Base */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.1, duration: 0.6 }}
+        className="max-w-5xl mx-auto bg-gradient-to-br from-gray-900/90 via-indigo-950/30 to-gray-900/90 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-indigo-500/20 mb-16"
+      >
+        <h2 className="text-4xl font-black text-transparent bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text mb-8 text-center">
+          👥 Community Knowledge Base
+        </h2>
+
+        <div className="mb-8">
+          <input
+            type="text"
+            value={knowledgeSearch}
+            onChange={(e) => setKnowledgeSearch(e.target.value)}
+            placeholder="🔍 Search farming tips..."
+            className="w-full px-4 py-3 bg-gray-800 border border-indigo-500/30 rounded-xl text-white focus:outline-none focus:border-indigo-500"
+          />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          {filteredKnowledge.map((item, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="bg-gradient-to-br from-indigo-600/10 to-purple-600/10 p-5 rounded-xl border border-indigo-500/30 hover:border-indigo-500/50 transition-all"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <span className="text-2xl">{item.icon}</span>
+                  <span className="text-indigo-400 text-xs font-semibold">
+                    {item.category}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1 text-gray-400 text-xs">
+                  <span>❤️</span>
+                  <span>{item.likes}</span>
+                </div>
+              </div>
+              <h4 className="text-white font-bold mb-2">{item.title}</h4>
+              <p className="text-gray-300 text-sm mb-3 leading-relaxed">
+                {item.content}
+              </p>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-indigo-400">{item.author}</span>
+                <span className="text-gray-500">{item.region}</span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.section>
+    </main>
   );
 }

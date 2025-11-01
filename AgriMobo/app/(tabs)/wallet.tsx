@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Dimensions,
   StatusBar,
   Alert,
 } from "react-native";
@@ -12,7 +11,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MotiView } from "moti";
 import QRCode from "react-native-qrcode-svg";
 import {
-  Wallet,
   CreditCard,
   ArrowUpRight,
   ArrowDownLeft,
@@ -24,7 +22,7 @@ import {
   History,
 } from "lucide-react-native";
 
-const { width } = Dimensions.get("window");
+
 
 export default function WalletScreen() {
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
