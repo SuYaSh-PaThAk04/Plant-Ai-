@@ -189,7 +189,6 @@ const sendMessage = async () => {
 
   return (
     <>
-      {/* Floating Button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
