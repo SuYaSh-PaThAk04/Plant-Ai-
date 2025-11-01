@@ -10,7 +10,7 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:3000",
   "https://plant-ai-557c.vercel.app",
-  "https://plant-ai-1sxv.onrender.com",
+  "https://plant-ai-ten.vercel.app",
   "https://plant-m67aa15d7-suyash-pathak04s-projects.vercel.app", 
 ];
 
