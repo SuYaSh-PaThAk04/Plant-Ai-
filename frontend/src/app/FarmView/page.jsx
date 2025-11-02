@@ -16,6 +16,7 @@ export default function FarmMonitor() {
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(null);
+  const [usingDummyData, setUsingDummyData] = useState(false);
   const canvasRef = useRef(null);
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
@@ -30,32 +31,140 @@ export default function FarmMonitor() {
   const [viewMode, setViewMode] = useState("farm");
   const farmPlotsRef = useRef([]);
 
+  const generateDummyData = () => {
+  
+    const now = Date.now();
+    const dummyReadings = {};
+
+    // Generate 30 dummy readings with realistic values
+    for (let i = 0; i < 30; i++) {
+      const timestamp = new Date(now - (29 - i) * 60000).toISOString();
+      dummyReadings[timestamp] = {
+        soil_moisture: Math.round(
+          400 + Math.random() * 200 + Math.sin(i / 5) * 50
+        ),
+        temperature: parseFloat(
+          20
+        ),
+        humidity: 55
+      };
+    }
+
+    return dummyReadings;
+  };
+
   const fetchSensorData = async () => {
     try {
       setLoading(true);
       const response = await fetch(
-        "https://smartirrigationsystem-8dba4-default-rtdb.asia-southeast1.firebasedatabase.app/sensor_readings.json"
+        "https://smartirrigationsystem-8dba4-default-rtdb.asia-southeast1.firebasedatabase.app/.json"
       );
-      const data = await response.json();
+      const json = await response.json();
 
-      if (data) {
-        setSensorData(data);
+      let readings = null;
+      let deviceKey = null;
+
+      // Try to find sensor readings in various possible structures
+      if (json?.sensor_readings?.ESP8266_DEVICE_ID_1) {
+        readings = json.sensor_readings;
+        deviceKey = "ESP8266_DEVICE_ID_1";
+      } else if (json?.sensor_readings) {
+        readings = json.sensor_readings;
+        deviceKey = Object.keys(json.sensor_readings)[0];
+      } else if (json?.ESP8266_DEVICE_ID_1) {
+        readings = { ESP8266_DEVICE_ID_1: json.ESP8266_DEVICE_ID_1 };
+        deviceKey = "ESP8266_DEVICE_ID_1";
+      } else if (json && typeof json === "object") {
+        const firstKey = Object.keys(json)[0];
+        if (firstKey && typeof json[firstKey] === "object") {
+          readings = { [firstKey]: json[firstKey] };
+          deviceKey = firstKey;
+        }
+      }
+
+      // Check if readings are valid and not empty
+      let usesDummy = false;
+      if (
+        !readings ||
+        !deviceKey ||
+        !readings[deviceKey] ||
+        Object.keys(readings[deviceKey]).length === 0
+      ) {
+        console.warn("No valid sensor readings found, using dummy data");
+        const dummyReadings = generateDummyData();
+        readings = { ESP8266_DEVICE_ID_1: dummyReadings };
+        deviceKey = "ESP8266_DEVICE_ID_1";
+        usesDummy = true;
+      } else {
+        // Check if all values are zero
+        const timestamps = Object.keys(readings[deviceKey]);
+        const allZero = timestamps.every((timestamp) => {
+          const reading = readings[deviceKey][timestamp];
+          const soil = parseFloat(
+            reading.soil_moisture ||
+              reading.soilMoisture ||
+              reading.moisture ||
+              0
+          );
+          const temp = parseFloat(reading.temperature || reading.temp || 0);
+          const humid = parseFloat(reading.humidity || reading.humid || 0);
+          return soil === 0 && temp === 0 && humid === 0;
+        });
+
+        if (allZero) {
+          console.warn("All sensor values are zero, using dummy data");
+          const dummyReadings = generateDummyData();
+          readings = { ESP8266_DEVICE_ID_1: dummyReadings };
+          deviceKey = "ESP8266_DEVICE_ID_1";
+          usesDummy = true;
+        }
+      }
+
+      if (readings && deviceKey) {
+        setSensorData(readings);
         setConnected(true);
         setLastUpdate(new Date());
-
-        const deviceKey = Object.keys(data)[0];
+        setUsingDummyData(usesDummy);
         setDeviceId(deviceKey);
-        const timestamps = Object.keys(data[deviceKey]);
-        const latestTimestamp = timestamps[timestamps.length - 1];
-        const latestReading = data[deviceKey][latestTimestamp];
 
-        setCurrentTemp(latestReading.temperature);
-        setCurrentMoisture(latestReading.soil_moisture);
-        setCurrentHumidity(latestReading.humidity);
+        const timestamps = Object.keys(readings[deviceKey]);
+        const latestTimestamp = timestamps[timestamps.length - 1];
+        const latestReading = readings[deviceKey][latestTimestamp];
+
+        setCurrentTemp(
+          parseFloat(latestReading.temperature || latestReading.temp || 25)
+        );
+        setCurrentMoisture(
+          parseFloat(
+            latestReading.soil_moisture ||
+              latestReading.soilMoisture ||
+              latestReading.moisture ||
+              450
+          )
+        );
+        setCurrentHumidity(
+          parseFloat(latestReading.humidity || latestReading.humid || 60)
+        );
       }
     } catch (error) {
       console.error("Error fetching sensor data:", error);
-      setConnected(false);
+      console.log("Using dummy data due to fetch error");
+
+      // Use dummy data on error
+      const dummyReadings = generateDummyData();
+      const readings = { ESP8266_DEVICE_ID_1: dummyReadings };
+      setSensorData(readings);
+      setConnected(true);
+      setUsingDummyData(true);
+      setDeviceId("ESP8266_DEVICE_ID_1");
+
+      const timestamps = Object.keys(dummyReadings);
+      const latestTimestamp = timestamps[timestamps.length - 1];
+      const latestReading = dummyReadings[latestTimestamp];
+
+      setCurrentTemp(latestReading.temperature);
+      setCurrentMoisture(latestReading.soil_moisture);
+      setCurrentHumidity(latestReading.humidity);
     } finally {
       setLoading(false);
     }
@@ -63,7 +172,7 @@ export default function FarmMonitor() {
 
   useEffect(() => {
     fetchSensorData();
-    const interval = setInterval(fetchSensorData, 600000);
+    const interval = setInterval(fetchSensorData, 60000); // Refresh every 60 seconds
     return () => clearInterval(interval);
   }, []);
 
@@ -401,19 +510,27 @@ export default function FarmMonitor() {
   return (
     <div className="w-screen h-screen bg-gradient-to-br from-black via-gray-900 to-emerald-950 flex overflow-hidden">
       {/* Animated background */}
-     <div className="absolute inset-0">
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse"></div>
-          <div
-            className="absolute bottom-20 right-1/4 w-96 h-96 bg-green-500/20 rounded-full blur-3xl animate-pulse"
-            style={{ animationDelay: "1s" }}
-          ></div>
-          <div
-            className="absolute top-1/2 left-1/2 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
-            style={{ animationDelay: "2s" }}
-          ></div>
-        </div>
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div
+          className="absolute bottom-20 right-1/4 w-96 h-96 bg-green-500/20 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "1s" }}
+        ></div>
+        <div
+          className="absolute top-1/2 left-1/2 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
+          style={{ animationDelay: "2s" }}
+        ></div>
+      </div>
 
       <div className="w-96 bg-gradient-to-b from-gray-900/95 to-black/95 backdrop-blur-xl border-r border-emerald-500/20 p-6 flex flex-col gap-6 z-10 overflow-y-auto">
+        {/* Dummy Data Indicator */}
+        {usingDummyData && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-3">
+            <p className="text-yellow-400 text-xs font-semibold text-center">
+              📊 Displaying Simulated Data
+            </p>
+          </div>
+        )}
 
         {/* Sensor Panel */}
         <div
@@ -511,7 +628,7 @@ export default function FarmMonitor() {
                     Soil Moisture
                   </div>
                   <div className="text-3xl font-bold text-white">
-                    {currentMoisture}
+                    {Math.round(currentMoisture)}
                   </div>
                 </div>
               </div>
@@ -584,7 +701,10 @@ export default function FarmMonitor() {
       </div>
 
       <div className="flex-1 flex flex-col p-6 z-10">
-        <div className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-xl rounded-2xl p-5 mb-6 border border-emerald-500/20 shadow-xl flex items-center justify-between">
+        <div
+          className="bg-gradient-to-r from-gray-900/80 to-gray-800/80 backdrop-blur-xl rounded-2xl p-5 mb-6 border border-emerald-500/20 shadow-xl flex items?>
+    -center justify-between"
+        >
           <div>
             <h2 className="text-2xl font-bold text-white mb-1">
               Live 3D Plot Visualization

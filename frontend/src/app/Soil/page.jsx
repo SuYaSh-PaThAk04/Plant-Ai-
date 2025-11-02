@@ -241,7 +241,7 @@ export default function AnalyticsPage() {
       );
 
       setRadarData([
-        { metric: "Soil", current: latestSoil, optimal: 500 },
+        { metric: "Soil", current: latestSoil, optimal: 100 },
         { metric: "Temp", current: latestTemp * 20, optimal: 25 * 20 },
         { metric: "Humidity", current: latestHumidity, optimal: 70 },
       ]);
