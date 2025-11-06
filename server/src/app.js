@@ -4,6 +4,7 @@ import aiRoutes from "./routes/ai.routes.js";
 import soilRoutes from "./routes/soil.routes.js";
 import chatRoutes from "./routes/chatbot.route.js";
 import walletRoutes from "./routes/wallet.Routes.js";
+import yeildRoutes from "./routes/yeild.router.js";
 const app = express();
 
 const allowedOrigins = [
@@ -32,6 +33,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/soil", soilRoutes);
 app.use("/api", chatRoutes);
 app.use("/api/wallet", walletRoutes);
+app.use("/api/yeild", yeildRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
