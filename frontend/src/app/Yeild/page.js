@@ -42,11 +42,14 @@ export default function YieldPredictionPage() {
     setResult(null);
 
     try {
-      const res = await fetch("http://localhost:5000/api/yeild/predict-yield", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      const res = await fetch(
+        "https://plant-ai-1sxv.onrender.com/api/yeild/predict-yield",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        }
+      );
 
       const data = await res.json();
       if (data.success) {
