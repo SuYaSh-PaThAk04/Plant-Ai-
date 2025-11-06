@@ -10,6 +10,7 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
+  AreaChart
 } from "lucide-react";
 
 export default function YieldPredictionPage() {
