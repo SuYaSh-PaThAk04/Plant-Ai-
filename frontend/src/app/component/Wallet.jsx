@@ -35,7 +35,7 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
   const [copied, setCopied] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasMetaMask, setHasMetaMask] = useState(false);
-
+  const [loading, setLoading] = useState(false);
   const API_BASE =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/wallet";
   const ADDRESS =
@@ -48,6 +48,7 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
 
   // Connect MetaMask with API integration
   async function connectWallet() {
+     setLoading(true);
     if (typeof window.ethereum === "undefined") {
       setStatus("MetaMask not found. Please install MetaMask.");
       alert("Please install MetaMask extension to continue.");
@@ -56,7 +57,7 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
 
     try {
       setStatus("Connecting to MetaMask...");
-
+      setLoading(true);
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
@@ -84,7 +85,7 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
       setProvider(provider);
       setSigner(signer);
       setAccount(address);
-      setStatus("Connected successfully ✅");
+      setStatus("Connected successfully ");
 
       // Listen for account or network changes
       window.ethereum.on("accountsChanged", (accounts) => {
@@ -129,10 +130,10 @@ export default function FarmerWallet({ rpcProviderUrl, tokenAddress }) {
         setTokenBalance(data.tokenBalance || "0");
       }
 
-      setStatus("Balances updated ✅");
+      setStatus("Balances updated ");
     } catch (err) {
       console.error("Error fetching balances:", err);
-      setStatus("Failed to fetch balances ❌");
+      setStatus("Failed to fetch balances ");
 
       // Fallback to direct blockchain query
       if (provider && account) {

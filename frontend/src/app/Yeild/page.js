@@ -10,8 +10,29 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
-  AreaChart
+  BarChart3,
+  PieChart,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart as RechartsPie,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar,
+} from "recharts";
 
 export default function YieldPredictionPage() {
   const [form, setForm] = useState({
@@ -352,6 +373,302 @@ export default function YieldPredictionPage() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Visualization Section */}
+                <div className="space-y-6">
+                  {/* Section Header */}
+                  <div className="flex items-center justify-center space-x-3 py-4">
+                    <BarChart3 className="w-6 h-6 text-green-400" />
+                    <h3 className="text-2xl font-bold text-transparent bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text">
+                      Data Visualizations
+                    </h3>
+                  </div>
+
+                  {/* Nutrient Analysis Chart */}
+                  <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-green-500/20 backdrop-blur-sm">
+                    <h4 className="text-green-400 font-bold text-lg mb-4 flex items-center space-x-2">
+                      <Droplets className="w-5 h-5" />
+                      <span>Nutrient Analysis (kg/ha)</span>
+                    </h4>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart
+                        data={[
+                          {
+                            name: "Nitrogen",
+                            value: parseFloat(form.n_nutrient_kg_ha) || 0,
+                            optimal: 120,
+                          },
+                          {
+                            name: "Phosphorus",
+                            value: parseFloat(form.p_nutrient_kg_ha) || 0,
+                            optimal: 60,
+                          },
+                          {
+                            name: "Potassium",
+                            value: parseFloat(form.k_nutrient_kg_ha) || 0,
+                            optimal: 80,
+                          },
+                        ]}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis dataKey="name" stroke="#9ca3af" />
+                        <YAxis stroke="#9ca3af" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#1f2937",
+                            border: "1px solid #10b981",
+                            borderRadius: "8px",
+                          }}
+                        />
+                        <Legend />
+                        <Bar dataKey="value" fill="#10b981" name="Applied" />
+                        <Bar
+                          dataKey="optimal"
+                          fill="#3b82f6"
+                          name="Optimal Range"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Yield Comparison Chart */}
+                    <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-green-500/20 backdrop-blur-sm">
+                      <h4 className="text-green-400 font-bold text-lg mb-4 flex items-center space-x-2">
+                        <TrendingUp className="w-5 h-5" />
+                        <span>Yield Comparison</span>
+                      </h4>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart
+                          data={[
+                            {
+                              category: "National Avg",
+                              yield: form.crop.toLowerCase().includes("wheat")
+                                ? 3.2
+                                : form.crop.toLowerCase().includes("rice")
+                                ? 4.0
+                                : 3.5,
+                            },
+                            {
+                              category: "Your Prediction",
+                              yield: result.predicted_yield_t_ha || 0,
+                            },
+                            {
+                              category: "Top 10%",
+                              yield: form.crop.toLowerCase().includes("wheat")
+                                ? 5.5
+                                : form.crop.toLowerCase().includes("rice")
+                                ? 6.5
+                                : 5.8,
+                            },
+                          ]}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#374151"
+                          />
+                          <XAxis dataKey="category" stroke="#9ca3af" />
+                          <YAxis
+                            stroke="#9ca3af"
+                            label={{
+                              value: "t/ha",
+                              angle: -90,
+                              position: "insideLeft",
+                              fill: "#9ca3af",
+                            }}
+                          />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#1f2937",
+                              border: "1px solid #10b981",
+                              borderRadius: "8px",
+                            }}
+                          />
+                          <Bar dataKey="yield" fill="#10b981" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Revenue Breakdown Pie Chart */}
+                    {result.estimated_revenue && (
+                      <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-green-500/20 backdrop-blur-sm">
+                        <h4 className="text-green-400 font-bold text-lg mb-4 flex items-center space-x-2">
+                          <PieChart className="w-5 h-5" />
+                          <span>Cost vs Revenue</span>
+                        </h4>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <RechartsPie>
+                            <Pie
+                              data={[
+                                {
+                                  name: "Net Profit",
+                                  value: result.estimated_revenue * 0.65,
+                                },
+                                {
+                                  name: "Input Costs",
+                                  value: result.estimated_revenue * 0.25,
+                                },
+                                {
+                                  name: "Labor",
+                                  value: result.estimated_revenue * 0.1,
+                                },
+                              ]}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ name, percent }) =>
+                                `${name}: ${(percent * 100).toFixed(0)}%`
+                              }
+                              outerRadius={80}
+                              fill="#8884d8"
+                              dataKey="value"
+                            >
+                              <Cell fill="#10b981" />
+                              <Cell fill="#f59e0b" />
+                              <Cell fill="#ef4444" />
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "#1f2937",
+                                border: "1px solid #10b981",
+                                borderRadius: "8px",
+                              }}
+                              formatter={(value) =>
+                                `₹${value.toLocaleString()}`
+                              }
+                            />
+                          </RechartsPie>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Soil Health Radar Chart */}
+                  <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-green-500/20 backdrop-blur-sm">
+                    <h4 className="text-green-400 font-bold text-lg mb-4 flex items-center space-x-2">
+                      <Leaf className="w-5 h-5" />
+                      <span>Soil Health Profile</span>
+                    </h4>
+                    <ResponsiveContainer width="100%" height={350}>
+                      <RadarChart
+                        data={[
+                          {
+                            metric: "pH Level",
+                            value: ((parseFloat(form.soil_ph) || 7) / 14) * 100,
+                            optimal: 50,
+                          },
+                          {
+                            metric: "Nitrogen",
+                            value: Math.min(
+                              ((parseFloat(form.n_nutrient_kg_ha) || 0) / 200) *
+                                100,
+                              100
+                            ),
+                            optimal: 60,
+                          },
+                          {
+                            metric: "Phosphorus",
+                            value: Math.min(
+                              ((parseFloat(form.p_nutrient_kg_ha) || 0) / 100) *
+                                100,
+                              100
+                            ),
+                            optimal: 60,
+                          },
+                          {
+                            metric: "Potassium",
+                            value: Math.min(
+                              ((parseFloat(form.k_nutrient_kg_ha) || 0) / 150) *
+                                100,
+                              100
+                            ),
+                            optimal: 53,
+                          },
+                          {
+                            metric: "Area Health",
+                            value: 75,
+                            optimal: 75,
+                          },
+                        ]}
+                      >
+                        <PolarGrid stroke="#374151" />
+                        <PolarAngleAxis dataKey="metric" stroke="#9ca3af" />
+                        <PolarRadiusAxis stroke="#9ca3af" />
+                        <Radar
+                          name="Current"
+                          dataKey="value"
+                          stroke="#10b981"
+                          fill="#10b981"
+                          fillOpacity={0.6}
+                        />
+                        <Radar
+                          name="Optimal"
+                          dataKey="optimal"
+                          stroke="#3b82f6"
+                          fill="#3b82f6"
+                          fillOpacity={0.3}
+                        />
+                        <Legend />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#1f2937",
+                            border: "1px solid #10b981",
+                            borderRadius: "8px",
+                          }}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Production Timeline */}
+                  <div className="bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-6 border border-green-500/20 backdrop-blur-sm">
+                    <h4 className="text-green-400 font-bold text-lg mb-4 flex items-center space-x-2">
+                      <Calendar className="w-5 h-5" />
+                      <span>Expected Growth Timeline</span>
+                    </h4>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart
+                        data={[
+                          { stage: "Week 1", growth: 5, yield: 0 },
+                          { stage: "Week 4", growth: 25, yield: 0 },
+                          { stage: "Week 8", growth: 60, yield: 10 },
+                          { stage: "Week 12", growth: 85, yield: 50 },
+                          {
+                            stage: "Harvest",
+                            growth: 100,
+                            yield: result.predicted_yield_t_ha || 0,
+                          },
+                        ]}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis dataKey="stage" stroke="#9ca3af" />
+                        <YAxis stroke="#9ca3af" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#1f2937",
+                            border: "1px solid #10b981",
+                            borderRadius: "8px",
+                          }}
+                        />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="growth"
+                          stroke="#10b981"
+                          strokeWidth={3}
+                          name="Growth %"
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="yield"
+                          stroke="#3b82f6"
+                          strokeWidth={3}
+                          name="Yield Progress %"
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
 
                 {/* New Analysis Button */}
