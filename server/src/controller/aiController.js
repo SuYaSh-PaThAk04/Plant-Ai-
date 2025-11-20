@@ -26,7 +26,7 @@ export const analyzeImage = async (req, res) => {
     // ✅ Use a valid Gemini model name
     // Available models: gemini-1.5-flash, gemini-1.5-pro, gemini-1.5-flash-8b
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash", // Changed from invalid model name
+      model: "gemini-2.0-flash",
     });
 
     // 🌱 Structured AI instruction
