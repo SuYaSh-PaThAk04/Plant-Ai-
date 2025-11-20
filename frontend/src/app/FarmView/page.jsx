@@ -28,7 +28,7 @@ export default function FarmMonitor() {
   const [currentMoisture, setCurrentMoisture] = useState(450);
   const [currentHumidity, setCurrentHumidity] = useState(60);
   const [deviceId, setDeviceId] = useState("ESP8266_DEVICE_ID_1");
-  const [viewMode, setViewMode] = useState("farm");
+  const [viewMode, setViewMode] = useState("single");
   const farmPlotsRef = useRef([]);
   const BLYNK_TOKEN = "KlC8k2vkOEqNdN1Cdnw55rWxl4WTSaI6";
   const BLYNK_DEVICE = "ESP32 ";
@@ -37,7 +37,6 @@ export default function FarmMonitor() {
     const now = Date.now();
     const dummyReadings = {};
 
-    // Generate 30 dummy readings with realistic values
     for (let i = 0; i < 30; i++) {
       const timestamp = new Date(now - (29 - i) * 60000).toISOString();
       dummyReadings[timestamp] = {
@@ -56,7 +55,6 @@ export default function FarmMonitor() {
     try {
       setLoading(true);
 
-      // Fetch values from Blynk V pins
       const soilRes = await fetch(
         `https://blynk.cloud/external/api/get?token=KlC8k2vkOEqNdN1Cdnw55rWxl4WTSaI6&V1`
       );
