@@ -30,9 +30,10 @@ export default function FarmMonitor() {
   const [deviceId, setDeviceId] = useState("ESP8266_DEVICE_ID_1");
   const [viewMode, setViewMode] = useState("farm");
   const farmPlotsRef = useRef([]);
+  const BLYNK_TOKEN = "KlC8k2vkOEqNdN1Cdnw55rWxl4WTSaI6";
+  const BLYNK_DEVICE = "ESP32 ";
 
   const generateDummyData = () => {
-  
     const now = Date.now();
     const dummyReadings = {};
 
@@ -43,10 +44,8 @@ export default function FarmMonitor() {
         soil_moisture: Math.round(
           400 + Math.random() * 200 + Math.sin(i / 5) * 50
         ),
-        temperature: parseFloat(
-          20
-        ),
-        humidity: 55
+        temperature: parseFloat(20),
+        humidity: 55,
       };
     }
 
@@ -56,115 +55,56 @@ export default function FarmMonitor() {
   const fetchSensorData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        "https://smartirrigationsystem-8dba4-default-rtdb.asia-southeast1.firebasedatabase.app/.json"
+
+      // Fetch values from Blynk V pins
+      const soilRes = await fetch(
+        `https://blynk.cloud/external/api/get?token=KlC8k2vkOEqNdN1Cdnw55rWxl4WTSaI6&V1`
       );
-      const json = await response.json();
+      const tempRes = await fetch(
+        `https://blynk.cloud/external/api/get?token=KlC8k2vkOEqNdN1Cdnw55rWxl4WTSaI6&V3`
+      );
+      const humidRes = await fetch(
+        `https://blynk.cloud/external/api/get?token=KlC8k2vkOEqNdN1Cdnw55rWxl4WTSaI6&V4`
+      );
 
-      let readings = null;
-      let deviceKey = null;
+      const soil_moisture = await soilRes.text();
+      const temperature = await tempRes.text();
+      const humidity = await humidRes.text();
 
-      // Try to find sensor readings in various possible structures
-      if (json?.sensor_readings?.ESP8266_DEVICE_ID_1) {
-        readings = json.sensor_readings;
-        deviceKey = "ESP8266_DEVICE_ID_1";
-      } else if (json?.sensor_readings) {
-        readings = json.sensor_readings;
-        deviceKey = Object.keys(json.sensor_readings)[0];
-      } else if (json?.ESP8266_DEVICE_ID_1) {
-        readings = { ESP8266_DEVICE_ID_1: json.ESP8266_DEVICE_ID_1 };
-        deviceKey = "ESP8266_DEVICE_ID_1";
-      } else if (json && typeof json === "object") {
-        const firstKey = Object.keys(json)[0];
-        if (firstKey && typeof json[firstKey] === "object") {
-          readings = { [firstKey]: json[firstKey] };
-          deviceKey = firstKey;
-        }
-      }
+      // Validate readings
+      if (!soil_moisture || !temperature || !humidity) {
+        console.warn("Blynk returned empty values — using dummy data");
 
-      // Check if readings are valid and not empty
-      let usesDummy = false;
-      if (
-        !readings ||
-        !deviceKey ||
-        !readings[deviceKey] ||
-        Object.keys(readings[deviceKey]).length === 0
-      ) {
-        console.warn("No valid sensor readings found, using dummy data");
         const dummyReadings = generateDummyData();
-        readings = { ESP8266_DEVICE_ID_1: dummyReadings };
-        deviceKey = "ESP8266_DEVICE_ID_1";
-        usesDummy = true;
-      } else {
-        // Check if all values are zero
-        const timestamps = Object.keys(readings[deviceKey]);
-        const allZero = timestamps.every((timestamp) => {
-          const reading = readings[deviceKey][timestamp];
-          const soil = parseFloat(
-            reading.soil_moisture ||
-              reading.soilMoisture ||
-              reading.moisture ||
-              0
-          );
-          const temp = parseFloat(reading.temperature || reading.temp || 0);
-          const humid = parseFloat(reading.humidity || reading.humid || 0);
-          return soil === 0 && temp === 0 && humid === 0;
-        });
+        setUsingDummyData(true);
+        const timestamps = Object.keys(dummyReadings);
+        const last = dummyReadings[timestamps[timestamps.length - 1]];
 
-        if (allZero) {
-          console.warn("All sensor values are zero, using dummy data");
-          const dummyReadings = generateDummyData();
-          readings = { ESP8266_DEVICE_ID_1: dummyReadings };
-          deviceKey = "ESP8266_DEVICE_ID_1";
-          usesDummy = true;
-        }
+        setCurrentMoisture(last.soil_moisture);
+        setCurrentTemp(last.temperature);
+        setCurrentHumidity(last.humidity);
+        return;
       }
 
-      if (readings && deviceKey) {
-        setSensorData(readings);
-        setConnected(true);
-        setLastUpdate(new Date());
-        setUsingDummyData(usesDummy);
-        setDeviceId(deviceKey);
-
-        const timestamps = Object.keys(readings[deviceKey]);
-        const latestTimestamp = timestamps[timestamps.length - 1];
-        const latestReading = readings[deviceKey][latestTimestamp];
-
-        setCurrentTemp(
-          parseFloat(latestReading.temperature || latestReading.temp || 25)
-        );
-        setCurrentMoisture(
-          parseFloat(
-            latestReading.soil_moisture ||
-              latestReading.soilMoisture ||
-              latestReading.moisture ||
-              450
-          )
-        );
-        setCurrentHumidity(
-          parseFloat(latestReading.humidity || latestReading.humid || 60)
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching sensor data:", error);
-      console.log("Using dummy data due to fetch error");
-
-      // Use dummy data on error
-      const dummyReadings = generateDummyData();
-      const readings = { ESP8266_DEVICE_ID_1: dummyReadings };
-      setSensorData(readings);
+      // Successfully fetched Blynk sensor values
+      setUsingDummyData(false);
       setConnected(true);
-      setUsingDummyData(true);
-      setDeviceId("ESP8266_DEVICE_ID_1");
+      setLastUpdate(new Date());
 
+      setCurrentMoisture(parseFloat(soil_moisture));
+      setCurrentTemp(parseFloat(temperature));
+      setCurrentHumidity(parseFloat(humidity));
+    } catch (error) {
+      console.error("Error fetching Blynk data:", error);
+
+      const dummyReadings = generateDummyData();
       const timestamps = Object.keys(dummyReadings);
-      const latestTimestamp = timestamps[timestamps.length - 1];
-      const latestReading = dummyReadings[latestTimestamp];
+      const last = dummyReadings[timestamps[timestamps.length - 1]];
 
-      setCurrentTemp(latestReading.temperature);
-      setCurrentMoisture(latestReading.soil_moisture);
-      setCurrentHumidity(latestReading.humidity);
+      setUsingDummyData(true);
+      setCurrentMoisture(last.soil_moisture);
+      setCurrentTemp(last.temperature);
+      setCurrentHumidity(last.humidity);
     } finally {
       setLoading(false);
     }

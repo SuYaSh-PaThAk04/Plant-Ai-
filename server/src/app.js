@@ -5,6 +5,7 @@ import soilRoutes from "./routes/soil.routes.js";
 import chatRoutes from "./routes/chatbot.route.js";
 import walletRoutes from "./routes/wallet.Routes.js";
 import yeildRoutes from "./routes/yeild.router.js";
+import blynkRoutes from "./routes/blynk.routes.js";
 const app = express();
 
 const allowedOrigins = [
@@ -34,6 +35,7 @@ app.use("/api/soil", soilRoutes);
 app.use("/api", chatRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/yeild", yeildRoutes);
+app.use("/api/blynk", blynkRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

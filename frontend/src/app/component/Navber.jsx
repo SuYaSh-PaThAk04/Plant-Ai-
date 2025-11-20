@@ -28,6 +28,7 @@ export default function Navbar() {
     { name: "Irrigation", href: "/Irrigation", icon: Droplet },
     { name: "Disease Detection", href: "/Disease-Detect", icon: Zap },
     { name: "Wallet", href: "/Wallet", icon: WalletIcon },
+    { name: "Market Prices", href: "/MarketPlace", icon: WalletIcon },
   ];
 
   return (
@@ -89,15 +90,6 @@ export default function Navbar() {
                   </Link>
                 ))}
               </div>
-
-              {/* CTA Button - Desktop */}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="hidden lg:block px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-medium rounded-xl transition-all duration-300 shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50"
-              >
-                Get Started
-              </motion.button>
 
               {/* Mobile Menu Button */}
               <motion.button

@@ -45,29 +45,79 @@ export default function AnalyticsPage() {
   const [pieData, setPieData] = useState([]);
   const [radarData, setRadarData] = useState([]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(
-        "https://smartirrigationsystem-8dba4-default-rtdb.asia-southeast1.firebasedatabase.app/.json"
-      );
+const fetchData = async () => {
+  setLoading(true);
+  setError(null);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+  try {
+    const [soilRes, tempRes, humRes] = await Promise.all([
+      fetch(
+        "https://blynk.cloud/external/api/get?token=KlC8k2vkOEqNdN1Cdnw55rWxl4WTSaI6&V1"
+      ),
+      fetch(
+        "https://blynk.cloud/external/api/get?token=KlC8k2vkOEqNdN1Cdnw55rWxl4WTSaI6&V3"
+      ),
+      fetch(
+        "https://blynk.cloud/external/api/get?token=KlC8k2vkOEqNdN1Cdnw55rWxl4WTSaI6&V4"
+      ),
+    ]);
 
-      const json = await response.json();
-      console.log("Fetched data:", json);
-      setData(json);
-      processData(json);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const soil = parseFloat(await soilRes.text());
+    const temp = parseFloat(await tempRes.text());
+    const humidity = parseFloat(await humRes.text());
+
+    const reading = {
+      soil,
+      temp,
+      humidity,
+      time: new Date().toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+
+    // Append latest reading to the chart history
+    setTimeSeriesData((prev) => [...prev.slice(-19), reading]);
+
+    // Update stats
+    setStatsData({
+      soil: {
+        avg: soil.toFixed(1),
+        min: soil.toFixed(1),
+        max: soil.toFixed(1),
+      },
+      temp: {
+        avg: temp.toFixed(1),
+        min: temp.toFixed(1),
+        max: temp.toFixed(1),
+      },
+      humidity: {
+        avg: humidity.toFixed(1),
+        min: humidity.toFixed(1),
+        max: humidity.toFixed(1),
+      },
+    });
+
+    // Pie chart
+    setPieData([
+      { name: "Soil Moisture", value: soil, color: "#10b981" },
+      { name: "Temperature", value: temp * 10, color: "#f97316" },
+      { name: "Humidity", value: humidity, color: "#3b82f6" },
+    ]);
+
+    // Radar chart
+    setRadarData([
+      { metric: "Soil", current: soil, optimal: 100 },
+      { metric: "Temp", current: temp * 20, optimal: 25 * 20 },
+      { metric: "Humidity", current: humidity, optimal: 70 },
+    ]);
+  } catch (err) {
+    console.error("Blynk fetch error:", err);
+    setError("Unable to fetch data from Blynk");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const generateDummyData = () => {
     console.log("Generating dummy data...");

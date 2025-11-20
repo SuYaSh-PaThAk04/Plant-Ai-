@@ -89,9 +89,6 @@ export const chatWithGemini = async (req, res) => {
 
     }
 
-    // ----------------------
-    // 3️⃣ Return response
-    // ----------------------
     res.json({
       success: true,
       reply,
