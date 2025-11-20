@@ -117,7 +117,7 @@ export default function FarmMonitor() {
   }, []);
 
   const getPlotColor = (temp, moisture) => {
-    if (moisture > 500) {
+    if (moisture > 50) {
       return 0x60a5fa;
     } else if (temp > 30) {
       return 0xef4444;
@@ -129,14 +129,14 @@ export default function FarmMonitor() {
   };
 
   const getConditionText = () => {
-    if (currentMoisture > 500) return "HIGH MOISTURE";
+    if (currentMoisture > 50) return "HIGH MOISTURE";
     if (currentTemp > 30) return "HOT CONDITIONS";
     if (currentTemp > 26) return "WARM CONDITIONS";
     return "OPTIMAL CONDITIONS";
   };
 
   const getConditionColor = () => {
-    if (currentMoisture > 500) return "border-blue-400 text-blue-400";
+    if (currentMoisture > 50) return "border-blue-400 text-blue-400";
     if (currentTemp > 30) return "border-red-500 text-red-500";
     if (currentTemp > 26) return "border-orange-500 text-orange-500";
     return "border-emerald-500 text-emerald-500";
@@ -171,7 +171,7 @@ export default function FarmMonitor() {
     plotRef.current = plot;
     sceneRef.current.add(plot);
 
-    if (currentMoisture > 500) {
+    if (currentMoisture > 50) {
       const waterGeometry = new THREE.PlaneGeometry(1.9, 1.9);
       const waterMaterial = new THREE.MeshStandardMaterial({
         color: 0x60a5fa,
