@@ -1,19 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
-import axios from "axios";
 
 dotenv.config();
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
-const ELEVEN_API_KEY = process.env.ELEVENLABS_API_KEY;
-
-const ELEVEN_VOICE_HINDI = "AtX6p0vItOfWBULsG7XF";
-const ELEVEN_VOICE_ENGLISH = "21m00Tcm4TlvDq8ikWAM";
-
 const SYSTEM_INSTRUCTIONS = {
   "hi-IN": `आप एक कृषि विशेषज्ञ सहायक हैं जो किसानों को फसल प्रबंधन, मिट्टी की सेहत, कीट नियंत्रण, आधुनिक खेती तकनीक, सरकारी योजनाओं और बाजार सलाह से संबंधित मार्गदर्शन देते हैं।
 सिर्फ हिंदी (देवनागरी लिपि) में जवाब दें। अंग्रेजी का प्रयोग न करें।`,
+
   "en-US": `You are an AgriTech expert assistant helping farmers with crop management, soil health, pest control, modern farming techniques, government schemes, and market strategies.
 Respond only in English. Do not use Hindi.`,
 };
@@ -51,50 +46,11 @@ export const chatWithGemini = async (req, res) => {
       });
     }
 
-    let audioBase64 = null;
-    let audioError = null;
-
-    // Select voice ID based on language
-    const selectedVoice =
-      language === "hi-IN" ? ELEVEN_VOICE_HINDI : ELEVEN_VOICE_ENGLISH;
-
-    try {
-      const ttsResponse = await axios.post(
-        `https://api.elevenlabs.io/v1/text-to-speech/${selectedVoice}`,
-        {
-          text: reply,
-          voice_settings: {
-            stability: 0.4,
-            similarity_boost: 0.8,
-          },
-        },
-        {
-          headers: {
-            "xi-api-key": ELEVEN_API_KEY,
-            "Content-Type": "application/json",
-          },
-          responseType: "arraybuffer",
-        }
-      );
-
-      const audioBuffer = Buffer.from(ttsResponse.data, "binary");
-      audioBase64 = `data:audio/mp3;base64,${audioBuffer.toString("base64")}`;
-    } catch (err) {
-      console.error("ElevenLabs TTS Error:", err.response?.data || err.message);
-      audioError = "Voice generation failed. Showing text response only.";
-      console.error(
-        "ElevenLabs Error (Readable):",
-        JSON.parse(err.response?.data?.toString() || "{}")
-      );
-
-    }
-
+    // 🔥 Final clean response (No audio)
     res.json({
       success: true,
       reply,
       lang: language,
-      audio: audioBase64, // even if null
-      audioError,
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
