@@ -45,7 +45,9 @@ export default function PremiumMarketIntelligence() {
 const loadBuyers = async () => {
   setLoadingBuyers(true);
   try {
-    const response = await fetch('http://localhost:5000/api/buyers');
+    const response = await fetch(
+      "https://plant-ai-1sxv.onrender.com/api/buyers"
+    );
     const data = await response.json();
     
     if (data.success) {
@@ -65,13 +67,16 @@ const loadBuyers = async () => {
 const handleBuyerSubmit = async (e) => {
   e.preventDefault();
   try {
-    const response = await fetch('http://localhost:5000/api/buyers', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(buyerForm)
-    });
+    const response = await fetch(
+      "https://plant-ai-1sxv.onrender.com/api/buyers",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(buyerForm),
+      }
+    );
 
     const data = await response.json();
     
