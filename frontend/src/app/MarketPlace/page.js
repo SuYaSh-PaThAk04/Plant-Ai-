@@ -215,7 +215,7 @@ const handleBuyerSubmit = async (e) => {
           maxPrice: 2250,
           trend: "up",
           changePercent: 2.5,
-          market: "Majra,Dehradun",
+          market: "Roorkee,IN",
           lastUpdated: "Today",
           advice: "Prices rising - good time to sell",
           demand: "High",
